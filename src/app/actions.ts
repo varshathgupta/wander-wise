@@ -8,12 +8,14 @@ const inputSchema = z.object({
   startDate: z.string(),
   endDate: z.string(),
   travelerDetails: z.string(),
+  currency: z.enum(['USD', 'EUR', 'INR']),
 });
 
 export async function optimizeTravel(input: OptimizeTravelDatesInput): Promise<{ data: OptimizeTravelDatesOutput | null, error: string | null }> {
   const parsedInput = inputSchema.safeParse(input);
 
   if (!parsedInput.success) {
+    console.error("Invalid input:", parsedInput.error.flatten());
     return { data: null, error: "Invalid input." };
   }
   

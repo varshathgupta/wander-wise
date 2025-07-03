@@ -4,9 +4,12 @@ import { useState } from "react";
 import type { OptimizeTravelDatesOutput } from "@/ai/flows/optimize-travel-dates";
 import { TravelOptimizerForm } from "@/components/travel-optimizer-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plane, CalendarDays, Map, Lightbulb, Search, MapPin, DollarSign } from "lucide-react";
+import { Plane, CalendarDays, Map, Lightbulb, Search, MapPin, DollarSign, PlaneTakeoff, Hotel, UtensilsCrossed, PartyPopper, Bus, Star, ExternalLink } from "lucide-react";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import { Separator } from "@/components/ui/separator";
 
 export default function Home() {
   const [optimizationResult, setOptimizationResult] = useState<OptimizeTravelDatesOutput | null>(null);
@@ -17,6 +20,224 @@ export default function Home() {
     setDestination(destination);
   };
 
+  const currencySymbols: { [key: string]: string } = {
+    USD: "$",
+    EUR: "€",
+    INR: "₹",
+  };
+  
+  const currencySymbol = optimizationResult ? currencySymbols[optimizationResult.currency] : '$';
+
+  const renderSkeletons = () => (
+    <>
+      <Skeleton className="h-10 w-3/4 mb-6" />
+      <div className="space-y-8">
+        {[...Array(6)].map((_, i) => (
+          <Card key={i} className="shadow-lg">
+            <CardHeader>
+              <Skeleton className="h-7 w-1/3" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-5/6" />
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-4/6" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </>
+  );
+
+  const renderResults = () => {
+    if (!optimizationResult) return null;
+    
+    return (
+      <>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+          <h2 className="text-3xl font-bold font-headline text-gray-800 mb-2 sm:mb-0">Trip Analysis for {destination}</h2>
+          <Card className="shadow-md bg-primary text-primary-foreground p-4 rounded-lg">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-6 w-6"/>
+              <span className="text-sm">Total Est. Cost (p.p.)</span>
+            </div>
+             <p className="text-2xl font-bold text-right">
+                ~{currencySymbol}{optimizationResult.totalEstimatedCostPerPerson.toLocaleString()}
+              </p>
+          </Card>
+        </div>
+        
+        <Card className="shadow-lg bg-white mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-headline text-primary">
+              <Lightbulb />
+              AI-Powered Suggestions
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-muted-foreground space-y-2 prose">
+            <p>{optimizationResult.reasoning}</p>
+          </CardContent>
+        </Card>
+
+        <div className="grid md:grid-cols-2 gap-8">
+            <Card className="shadow-lg bg-white">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 font-headline text-primary">
+                  <CalendarDays />
+                  Optimal Dates
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-muted-foreground prose">
+                <p className="font-semibold text-lg">{optimizationResult.optimalDates}</p>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-lg bg-white">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 font-headline text-primary">
+                  <Map />
+                  Alternative Destinations
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-muted-foreground prose">
+                <p className="font-semibold text-lg">{optimizationResult.alternativeDestinations}</p>
+              </CardContent>
+            </Card>
+        </div>
+
+        <Card className="shadow-lg bg-white mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-headline text-primary">
+              <PlaneTakeoff />
+              Cheapest Flight
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex justify-between items-center">
+              <p className="font-bold text-lg">{optimizationResult.cheapestFlight.airline}</p>
+              <p className="font-bold text-lg text-primary">{currencySymbol}{optimizationResult.cheapestFlight.price.toLocaleString()}</p>
+            </div>
+            <p className="text-sm text-muted-foreground">{optimizationResult.cheapestFlight.details}</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-lg bg-white mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-headline text-primary">
+              <Hotel />
+             Recommended Accommodations
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {optimizationResult.recommendedAccommodations.map((hotel, index) => (
+              <div key={index}>
+                <div className="flex justify-between items-start gap-4">
+                    <div>
+                        <h3 className="font-bold">{hotel.name} <Badge variant="secondary">{hotel.type}</Badge></h3>
+                        <div className="flex items-center gap-1 text-sm text-amber-500">
+                            <Star className="h-4 w-4 fill-current" /> <span>{hotel.rating.toFixed(1)}</span>
+                        </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                        <p className="font-bold text-primary">{currencySymbol}{hotel.pricePerNight.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">/ night</span></p>
+                        <Link href={hotel.bookingLink} target="_blank" className="text-sm text-blue-500 hover:underline flex items-center justify-end gap-1">
+                            Book Now <ExternalLink className="h-3 w-3" />
+                        </Link>
+                    </div>
+                </div>
+                {index < optimizationResult.recommendedAccommodations.length - 1 && <Separator className="my-4" />}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg bg-white mt-8">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 font-headline text-primary">
+                <MapPin />
+                Places to Visit
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="text-muted-foreground prose">
+                <ul className="list-disc space-y-2 pl-5">
+                {optimizationResult.placesToVisit.map((place, index) => (
+                    <li key={index}>{place}</li>
+                ))}
+                </ul>
+            </CardContent>
+        </Card>
+
+        <Card className="shadow-lg bg-white mt-8">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 font-headline text-primary">
+                    <PartyPopper />
+                    Recommended Activities
+                </CardTitle>
+            </Header>
+            <CardContent className="space-y-4">
+                {optimizationResult.recommendedActivities.map((activity, index) => (
+                    <div key={index}>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h3 className="font-bold">{activity.name}</h3>
+                                <p className="text-sm text-muted-foreground">{activity.description}</p>
+                            </div>
+                            <p className="font-bold text-primary whitespace-nowrap pl-4">
+                                {activity.price > 0 ? `${currencySymbol}${activity.price.toLocaleString()}` : 'Free'}
+                            </p>
+                        </div>
+                        {index < optimizationResult.recommendedActivities.length - 1 && <Separator className="my-4" />}
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
+
+        <Card className="shadow-lg bg-white mt-8">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 font-headline text-primary">
+                    <UtensilsCrossed />
+                    Famous Food Spots
+                </CardTitle>
+            </Header>
+            <CardContent className="space-y-4">
+                {optimizationResult.famousFoodSpots.map((spot, index) => (
+                    <div key={index}>
+                        <div className="flex justify-between items-center">
+                            <h3 className="font-bold">{spot.name} <Badge variant="outline">{spot.cuisine}</Badge></h3>
+                            <p className="font-bold text-amber-600">{spot.estimatedCost}</p>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{spot.location}</p>
+                        {index < optimizationResult.famousFoodSpots.length - 1 && <Separator className="my-4" />}
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
+
+        <Card className="shadow-lg bg-white mt-8">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 font-headline text-primary">
+                    <Bus />
+                    Local Transportation
+                </CardTitle>
+            </Header>
+            <CardContent className="space-y-4">
+                {optimizationResult.localTransportation.map((transport, index) => (
+                    <div key={index}>
+                        <div className="flex justify-between items-center">
+                            <h3 className="font-bold">{transport.type}</h3>
+                            <p className="text-sm font-semibold text-muted-foreground">{transport.estimatedCost}</p>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{transport.details}</p>
+                        {index < optimizationResult.localTransportation.length - 1 && <Separator className="my-4" />}
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
+
+      </>
+    );
+  };
+  
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
@@ -44,7 +265,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-4 text-sm">
-                  Tell us your dream destination and travel dates, and our AI will help you find the best time to go or suggest amazing alternatives.
+                  Tell us your dream destination and travel dates, and our AI will create a detailed itinerary for you.
                 </p>
                 <TravelOptimizerForm 
                   setOptimizationResult={setOptimizationResult} 
@@ -57,138 +278,11 @@ export default function Home() {
 
           <div className="lg:col-span-3">
             <div className="space-y-8">
-              {isLoading ? (
-                <>
-                  <Skeleton className="h-10 w-1/2 mb-4" />
-                  <div className="space-y-8">
-                    <Card className="shadow-lg">
-                      <CardHeader>
-                        <Skeleton className="h-6 w-1/3" />
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-5/6" />
-                      </CardContent>
-                    </Card>
-                     <Card className="shadow-lg">
-                      <CardHeader>
-                        <Skeleton className="h-6 w-1/3" />
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <Skeleton className="h-4 w-full" />
-                      </CardContent>
-                    </Card>
-                     <Card className="shadow-lg">
-                      <CardHeader>
-                        <Skeleton className="h-6 w-1/3" />
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <Skeleton className="h-4 w-full" />
-                      </CardContent>
-                    </Card>
-                    <Card className="shadow-lg">
-                      <CardHeader>
-                        <Skeleton className="h-6 w-1/3" />
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-4/5" />
-                      </CardContent>
-                    </Card>
-                    <Card className="shadow-lg">
-                      <CardHeader>
-                        <Skeleton className="h-6 w-1/3" />
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <Skeleton className="h-8 w-1/2 mb-2" />
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-4 w-3/4" />
-                      </CardContent>
-                    </Card>
-                  </div>
-                </>
-              ) : optimizationResult ? (
-                <>
-                  <h2 className="text-3xl font-bold font-headline text-gray-800">Trip Analysis for {destination}</h2>
-                  
-                  <Card className="shadow-lg bg-white">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 font-headline text-primary">
-                        <Lightbulb />
-                        AI-Powered Suggestions
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-muted-foreground space-y-2 prose">
-                      <p>{optimizationResult.reasoning}</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="shadow-lg bg-white">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 font-headline text-primary">
-                        <CalendarDays />
-                        Optimal Dates
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-muted-foreground prose">
-                      <p>{optimizationResult.optimalDates}</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="shadow-lg bg-white">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 font-headline text-primary">
-                        <Map />
-                        Alternative Destinations
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-muted-foreground prose">
-                       <p>{optimizationResult.alternativeDestinations}</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="shadow-lg bg-white">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 font-headline text-primary">
-                        <MapPin />
-                        Places to Visit
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-muted-foreground prose">
-                      <ul className="list-disc space-y-2 pl-5">
-                        {optimizationResult.placesToVisit.map((place, index) => (
-                          <li key={index}>{place}</li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="shadow-lg bg-white">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 font-headline text-primary">
-                        <DollarSign />
-                        Estimated Expenses (per person)
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-3xl font-bold text-gray-800 mb-4">
-                        ~${optimizationResult.estimatedExpense.totalPerPerson.toLocaleString()}
-                      </p>
-                      <div className="space-y-1 text-sm text-muted-foreground prose">
-                        <p><strong>Flights:</strong> ${optimizationResult.estimatedExpense.breakdown.flights.toLocaleString()}</p>
-                        <p><strong>Accommodation:</strong> ${optimizationResult.estimatedExpense.breakdown.accommodation.toLocaleString()}</p>
-                        <p><strong>Food (daily):</strong> ${optimizationResult.estimatedExpense.breakdown.food.toLocaleString()}</p>
-                        <p><strong>Activities:</strong> ${optimizationResult.estimatedExpense.breakdown.activities.toLocaleString()}</p>
-                        <p><strong>Local Transport:</strong> ${optimizationResult.estimatedExpense.breakdown.transportation.toLocaleString()}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </>
-              ) : (
+              {isLoading 
+                ? renderSkeletons() 
+                : optimizationResult 
+                ? renderResults() 
+                : (
                 <Card className="flex flex-col items-center justify-center text-center p-12 shadow-lg h-full bg-card">
                   <Image src="https://placehold.co/400x300.png" alt="A map and a compass on a desk" width={400} height={300} data-ai-hint="travel adventure" className="mb-6 rounded-lg shadow-md"/>
                   <h2 className="text-2xl font-bold mb-2 font-headline">Your Adventure Awaits</h2>

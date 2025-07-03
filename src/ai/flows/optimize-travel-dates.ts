@@ -16,26 +16,56 @@ const OptimizeTravelDatesInputSchema = z.object({
   startDate: z.string().describe('The desired start date for the trip (YYYY-MM-DD).'),
   endDate: z.string().describe('The desired end date for the trip (YYYY-MM-DD).'),
   travelerDetails: z.string().describe('Details about the travelers, including their preferences and constraints.'),
+  currency: z.enum(['USD', 'EUR', 'INR']).describe('The currency for the expense estimation.'),
 });
 export type OptimizeTravelDatesInput = z.infer<typeof OptimizeTravelDatesInputSchema>;
 
-const ExpenseBreakdownSchema = z.object({
-  flights: z.number().describe('Estimated cost of round-trip flights per person in USD.'),
-  accommodation: z.number().describe('Estimated cost of accommodation per person for the trip duration in USD.'),
-  food: z.number().describe('Estimated daily food cost per person in USD.'),
-  activities: z.number().describe('Estimated cost for activities and sightseeing per person in USD.'),
-  transportation: z.number().describe('Estimated local transportation cost per person in USD.'),
+const FlightDetailsSchema = z.object({
+    airline: z.string().describe('The airline for the cheapest flight option.'),
+    price: z.number().describe('The estimated price of the round-trip flight per person.'),
+    details: z.string().describe('Additional details about the flight, like layovers or duration.'),
 });
+
+const AccommodationDetailsSchema = z.object({
+    name: z.string().describe('The name of the accommodation.'),
+    type: z.string().describe('Type of accommodation (e.g., Hotel, Hostel, Airbnb).'),
+    rating: z.number().describe('The rating of the accommodation (e.g., 4.5).'),
+    pricePerNight: z.number().describe('The estimated price per night.'),
+    bookingLink: z.string().url().describe('A link to book the accommodation.'),
+});
+
+const FoodSpotSchema = z.object({
+    name: z.string().describe('The name of the food spot.'),
+    cuisine: z.string().describe('The type of cuisine served.'),
+    estimatedCost: z.string().describe('Estimated cost per person (e.g., $, $$, $$$).'),
+    location: z.string().describe('The location or address of the food spot.'),
+});
+
+const ActivityDetailsSchema = z.object({
+    name: z.string().describe('The name of the activity or attraction.'),
+    description: z.string().describe('A brief description of the activity.'),
+    price: z.number().describe('The estimated price for the activity per person. Use 0 for free activities.'),
+});
+
+const TransportationDetailsSchema = z.object({
+    type: z.string().describe('The type of local transportation (e.g., Metro, Bus, Ride-sharing).'),
+    estimatedCost: z.string().describe('Estimated cost for using this transportation (e.g., cost per ride, or daily pass cost).'),
+    details: z.string().describe('Additional details or tips about using this transportation.'),
+});
+
 
 const OptimizeTravelDatesOutputSchema = z.object({
   optimalDates: z.string().describe('Suggested optimal travel dates (YYYY-MM-DD).'),
   alternativeDestinations: z.string().describe('Suggested alternative travel destinations.'),
   reasoning: z.string().describe('Reasoning for the date and/or destination changes.'),
   placesToVisit: z.array(z.string()).describe('A list of 3-5 recommended places to visit at the destination.'),
-  estimatedExpense: z.object({
-    totalPerPerson: z.number().describe('The overall estimated expense per person for the trip in USD.'),
-    breakdown: ExpenseBreakdownSchema.describe('A detailed breakdown of the estimated expenses per person in USD.'),
-  }).describe('Estimated expenses for the trip in USD.'),
+  totalEstimatedCostPerPerson: z.number().describe('The overall estimated total expense per person for the entire trip.'),
+  currency: z.enum(['USD', 'EUR', 'INR']).describe('The currency used for all cost estimations.'),
+  cheapestFlight: FlightDetailsSchema.describe('Details for the cheapest flight option found.'),
+  recommendedAccommodations: z.array(AccommodationDetailsSchema).describe('A list of 2-3 recommended accommodations based on high ratings and nominal price.'),
+  famousFoodSpots: z.array(FoodSpotSchema).describe('A list of famous local food spots.'),
+  recommendedActivities: z.array(ActivityDetailsSchema).describe('A list of recommended activities with their prices.'),
+  localTransportation: z.array(TransportationDetailsSchema).describe('Details about local transportation options.'),
 });
 export type OptimizeTravelDatesOutput = z.infer<typeof OptimizeTravelDatesOutputSchema>;
 
@@ -49,16 +79,26 @@ const prompt = ai.definePrompt({
   output: {schema: OptimizeTravelDatesOutputSchema},
   prompt: `You are a travel expert specializing in optimizing travel dates and destinations.
 
-  Given the user's desired destination, dates, and traveler details, suggest alternative dates or destinations if the initial choices are not optimal. Explain your reasoning for any changes.
+  Given the user's desired destination, dates, traveler details, and preferred currency, provide a comprehensive travel plan.
 
-  Also provide a list of recommended places to visit and a detailed breakdown of the estimated expenses per person in USD. The expense breakdown should include flights, accommodation, food (as a daily estimate), activities, and local transportation. Calculate a total estimated cost per person.
+  Your response MUST be in a valid JSON format that adheres to the provided schema.
 
-  Destination: {{{destination}}}
-  Start Date: {{{startDate}}}
-  End Date: {{{endDate}}}
-  Traveler Details: {{{travelerDetails}}}
+  - If the initial choices are not optimal, suggest alternative dates or destinations and explain your reasoning.
+  - Provide a list of recommended places to visit.
+  - Find the cheapest flight option and provide its details.
+  - Recommend 2-3 accommodations based on a balance of high ratings and a nominal price.
+  - List famous local food spots with their details.
+  - Suggest activities and attractions, including their estimated prices.
+  - Detail the available local transportation options.
+  - Calculate an overall estimated total cost per person for the trip.
+  - ALL monetary values MUST be in the user's specified currency: {{{currency}}}.
 
-  Consider factors such as weather, crowds, events, and pricing to determine the optimal travel plan.
+  User Input:
+  - Destination: {{{destination}}}
+  - Start Date: {{{startDate}}}
+  - End Date: {{{endDate}}}
+  - Traveler Details: {{{travelerDetails}}}
+  - Preferred Currency: {{{currency}}}
 
   Output in JSON format.
   `,
