@@ -31,7 +31,7 @@ const AccommodationDetailsSchema = z.object({
     type: z.string().describe('Type of accommodation (e.g., Hotel, Hostel, Airbnb).'),
     rating: z.number().describe('The rating of the accommodation (e.g., 4.5).'),
     pricePerNight: z.number().describe('The estimated price per night.'),
-    bookingLink: z.string().url().describe('A link to book the accommodation.'),
+    bookingLink: z.string().describe('A link to book the accommodation.'),
 });
 
 const FoodSpotSchema = z.object({
