@@ -173,7 +173,7 @@ export default function Home() {
                     <PartyPopper />
                     Recommended Activities
                 </CardTitle>
-            </Header>
+            </CardHeader>
             <CardContent className="space-y-4">
                 {optimizationResult.recommendedActivities.map((activity, index) => (
                     <div key={index}>
@@ -198,7 +198,7 @@ export default function Home() {
                     <UtensilsCrossed />
                     Famous Food Spots
                 </CardTitle>
-            </Header>
+            </CardHeader>
             <CardContent className="space-y-4">
                 {optimizationResult.famousFoodSpots.map((spot, index) => (
                     <div key={index}>
@@ -219,7 +219,7 @@ export default function Home() {
                     <Bus />
                     Local Transportation
                 </CardTitle>
-            </Header>
+            </CardHeader>
             <CardContent className="space-y-4">
                 {optimizationResult.localTransportation.map((transport, index) => (
                     <div key={index}>
