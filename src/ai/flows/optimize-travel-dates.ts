@@ -53,6 +53,18 @@ const TransportationDetailsSchema = z.object({
     details: z.string().describe('Additional details or tips about using this transportation.'),
 });
 
+const ItineraryItemSchema = z.object({
+    time: z.string().describe("Time of day for the activity (e.g., Morning, 9:00 AM, Afternoon, Evening)."),
+    activity: z.string().describe("The name of the activity or place to visit."),
+    description: z.string().describe("A brief description of the activity and why it's recommended."),
+});
+
+const DailyItinerarySchema = z.object({
+    day: z.number().describe("The day number of the trip (e.g., 1, 2, 3)."),
+    title: z.string().describe("A catchy title for the day's plan (e.g., 'Historical Heart of the City')."),
+    activities: z.array(ItineraryItemSchema).describe("A list of activities planned for the day."),
+});
+
 
 const OptimizeTravelDatesOutputSchema = z.object({
   optimalDates: z.string().describe('Suggested optimal travel dates (YYYY-MM-DD).'),
@@ -66,6 +78,7 @@ const OptimizeTravelDatesOutputSchema = z.object({
   famousFoodSpots: z.array(FoodSpotSchema).describe('A list of famous local food spots.'),
   recommendedActivities: z.array(ActivityDetailsSchema).describe('A list of recommended activities with their prices.'),
   localTransportation: z.array(TransportationDetailsSchema).describe('Details about local transportation options.'),
+  itinerary: z.array(DailyItinerarySchema).describe("A detailed day-by-day itinerary for the trip based on the traveler's preferences."),
 });
 export type OptimizeTravelDatesOutput = z.infer<typeof OptimizeTravelDatesOutputSchema>;
 
@@ -90,6 +103,7 @@ const prompt = ai.definePrompt({
   - List famous local food spots with their details.
   - Suggest activities and attractions, including their estimated prices.
   - Detail the available local transportation options.
+  - Create a detailed day-by-day itinerary for the trip. Each day should have a title and a list of activities with times and descriptions, tailored to the traveler's preferences.
   - Calculate an overall estimated total cost per person for the trip.
   - ALL monetary values MUST be in the user's specified currency: {{{currency}}}.
 
