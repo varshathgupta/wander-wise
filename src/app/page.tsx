@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { OptimizeTravelDatesOutput } from "@/ai/flows/optimize-travel-dates";
 import { TravelOptimizerForm } from "@/components/travel-optimizer-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plane, CalendarDays, Map, Lightbulb, Search, MapPin, DollarSign, PlaneTakeoff, Hotel, UtensilsCrossed, PartyPopper, Bus, Star, ExternalLink, ClipboardList } from "lucide-react";
+import { Plane, CalendarDays, Map, Lightbulb, Search, MapPin, DollarSign, PlaneTakeoff, Hotel, UtensilsCrossed, PartyPopper, Bus, Star, ExternalLink, ClipboardList, Train } from "lucide-react";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -122,6 +122,34 @@ export default function Home() {
           </CardContent>
         </Card>
         
+        {optimizationResult.directTrains && optimizationResult.directTrains.length > 0 && (
+          <Card className="shadow-lg bg-white mt-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 font-headline text-primary">
+                <Train />
+                Direct Trains
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {optimizationResult.directTrains.map((train, index) => (
+                <div key={index}>
+                  <div className="flex justify-between items-start gap-4">
+                      <div>
+                          <h3 className="font-bold">{train.trainName}</h3>
+                          <p className="text-sm text-muted-foreground">From {train.departureStation} to {train.arrivalStation}</p>
+                          <p className="text-sm text-muted-foreground">{train.details}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                          <p className="font-bold text-primary">{currencySymbol}{train.price.toLocaleString()}</p>
+                      </div>
+                  </div>
+                  {index < optimizationResult.directTrains.length - 1 && <Separator className="my-4" />}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="shadow-lg bg-white mt-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline text-primary">

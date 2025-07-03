@@ -26,6 +26,14 @@ const FlightDetailsSchema = z.object({
     details: z.string().describe('Additional details about the flight, like layovers or duration.'),
 });
 
+const TrainDetailsSchema = z.object({
+    trainName: z.string().describe('The name or number of the train.'),
+    departureStation: z.string().describe('The departure station.'),
+    arrivalStation: z.string().describe('The arrival station.'),
+    price: z.number().describe('The estimated price of the train ticket per person.'),
+    details: z.string().describe('Additional details about the train journey, like duration or class.'),
+});
+
 const AccommodationDetailsSchema = z.object({
     name: z.string().describe('The name of the accommodation.'),
     type: z.string().describe('Type of accommodation (e.g., Hotel, Hostel, Airbnb).'),
@@ -74,6 +82,7 @@ const OptimizeTravelDatesOutputSchema = z.object({
   totalEstimatedCostPerPerson: z.number().describe('The overall estimated total expense per person for the entire trip.'),
   currency: z.enum(['USD', 'EUR', 'INR']).describe('The currency used for all cost estimations.'),
   cheapestFlight: FlightDetailsSchema.describe('Details for the cheapest flight option found.'),
+  directTrains: z.array(TrainDetailsSchema).optional().describe('Details for direct train options, if available.'),
   recommendedAccommodations: z.array(AccommodationDetailsSchema).describe('A list of 2-3 recommended accommodations based on high ratings and nominal price.'),
   famousFoodSpots: z.array(FoodSpotSchema).describe('A list of famous local food spots.'),
   recommendedActivities: z.array(ActivityDetailsSchema).describe('A list of recommended activities with their prices.'),
@@ -99,6 +108,7 @@ const prompt = ai.definePrompt({
   - If the initial choices are not optimal, suggest alternative dates or destinations and explain your reasoning.
   - Provide a list of recommended places to visit.
   - Find the cheapest flight option and provide its details.
+  - If available, provide details for direct trains to the destination.
   - Recommend 2-3 accommodations based on a balance of high ratings and a nominal price.
   - List famous local food spots with their details.
   - Suggest activities and attractions, including their estimated prices.
