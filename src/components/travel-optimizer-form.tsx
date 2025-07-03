@@ -159,7 +159,7 @@ export function TravelOptimizerForm({ setOptimizationResult, setIsLoading, onFor
               control={form.control}
               name="currency"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Currency</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
