@@ -16,6 +16,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'previews.123rf.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };

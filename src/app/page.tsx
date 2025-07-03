@@ -346,7 +346,7 @@ export default function Home() {
                 ? renderResults() 
                 : (
                 <Card className="flex flex-col items-center justify-center text-center p-12 shadow-lg h-full bg-card">
-                  <Image src="https://placehold.co/400x300.png" alt="A map and a compass on a desk" width={400} height={300} data-ai-hint="travel adventure" className="mb-6 rounded-lg shadow-md"/>
+                  <Image src="https://previews.123rf.com/images/sborisov/sborisov1502/sborisov150200109/36881267-travel-the-world-monuments-concept.jpg" alt="Famous world landmarks around the globe" width={400} height={267} data-ai-hint="world landmarks travel" className="mb-6 rounded-lg shadow-md"/>
                   <h2 className="text-2xl font-bold mb-2 font-headline">Your Adventure Awaits</h2>
                   <p className="text-muted-foreground max-w-md mx-auto">
                     Fill out the form to get personalized travel recommendations and start planning your next journey.
