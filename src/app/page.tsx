@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { OptimizeTravelDatesOutput } from "@/ai/flows/optimize-travel-dates";
 import { TravelOptimizerForm } from "@/components/travel-optimizer-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plane, CalendarDays, Map, Lightbulb, Search } from "lucide-react";
+import { Plane, CalendarDays, Map, Lightbulb, Search, MapPin, DollarSign } from "lucide-react";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -86,6 +86,29 @@ export default function Home() {
                         <Skeleton className="h-4 w-full" />
                       </CardContent>
                     </Card>
+                    <Card className="shadow-lg">
+                      <CardHeader>
+                        <Skeleton className="h-6 w-1/3" />
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-4/5" />
+                      </CardContent>
+                    </Card>
+                    <Card className="shadow-lg">
+                      <CardHeader>
+                        <Skeleton className="h-6 w-1/3" />
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <Skeleton className="h-8 w-1/2 mb-2" />
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-3/4" />
+                      </CardContent>
+                    </Card>
                   </div>
                 </>
               ) : optimizationResult ? (
@@ -125,6 +148,43 @@ export default function Home() {
                     </CardHeader>
                     <CardContent className="text-muted-foreground prose">
                        <p>{optimizationResult.alternativeDestinations}</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="shadow-lg bg-white">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 font-headline text-primary">
+                        <MapPin />
+                        Places to Visit
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-muted-foreground prose">
+                      <ul className="list-disc space-y-2 pl-5">
+                        {optimizationResult.placesToVisit.map((place, index) => (
+                          <li key={index}>{place}</li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="shadow-lg bg-white">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 font-headline text-primary">
+                        <DollarSign />
+                        Estimated Expenses (per person)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-3xl font-bold text-gray-800 mb-4">
+                        ~${optimizationResult.estimatedExpense.totalPerPerson.toLocaleString()}
+                      </p>
+                      <div className="space-y-1 text-sm text-muted-foreground prose">
+                        <p><strong>Flights:</strong> ${optimizationResult.estimatedExpense.breakdown.flights.toLocaleString()}</p>
+                        <p><strong>Accommodation:</strong> ${optimizationResult.estimatedExpense.breakdown.accommodation.toLocaleString()}</p>
+                        <p><strong>Food (daily):</strong> ${optimizationResult.estimatedExpense.breakdown.food.toLocaleString()}</p>
+                        <p><strong>Activities:</strong> ${optimizationResult.estimatedExpense.breakdown.activities.toLocaleString()}</p>
+                        <p><strong>Local Transport:</strong> ${optimizationResult.estimatedExpense.breakdown.transportation.toLocaleString()}</p>
+                      </div>
                     </CardContent>
                   </Card>
                 </>
