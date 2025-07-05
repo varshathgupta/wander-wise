@@ -104,7 +104,7 @@ export function TravelOptimizerForm({ setOptimizationResult, setIsLoading, onFor
             <FormItem>
               <FormLabel>Source Location</FormLabel>
               <FormControl>
-                <Input placeholder="chennai,India" {...field} />
+                <Input placeholder="Chennai, India" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
