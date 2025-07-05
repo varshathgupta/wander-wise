@@ -4,6 +4,7 @@ import { optimizeTravelDates, type OptimizeTravelDatesInput, type OptimizeTravel
 import { z } from "zod";
 
 const inputSchema = z.object({
+  source: z.string(),
   destination: z.string(),
   startDate: z.string(),
   endDate: z.string(),

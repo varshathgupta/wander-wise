@@ -12,6 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const OptimizeTravelDatesInputSchema = z.object({
+  source: z.string().describe('The starting location for the trip.'),
   destination: z.string().describe('The desired travel destination.'),
   startDate: z.string().describe('The desired start date for the trip (YYYY-MM-DD).'),
   endDate: z.string().describe('The desired end date for the trip (YYYY-MM-DD).'),
@@ -101,14 +102,14 @@ const prompt = ai.definePrompt({
   output: {schema: OptimizeTravelDatesOutputSchema},
   prompt: `You are a travel expert specializing in optimizing travel dates and destinations.
 
-  Given the user's desired destination, dates, traveler details, and preferred currency, provide a comprehensive travel plan.
+  Given the user's starting point, desired destination, dates, traveler details, and preferred currency, provide a comprehensive travel plan.
 
   Your response MUST be in a valid JSON format that adheres to the provided schema.
 
   - If the initial choices are not optimal, suggest alternative dates or destinations and explain your reasoning.
   - Provide a list of recommended places to visit.
-  - Find the cheapest flight option and provide its details.
-  - If available, provide details for direct trains to the destination.
+  - Find the cheapest flight option from the source to the destination and provide its details.
+  - If available, provide details for direct trains from the source to the destination.
   - Recommend 2-3 accommodations based on a balance of high ratings and a nominal price.
   - List famous local food spots with their details.
   - Suggest activities and attractions, including their estimated prices.
@@ -118,6 +119,7 @@ const prompt = ai.definePrompt({
   - ALL monetary values MUST be in the user's specified currency: {{{currency}}}.
 
   User Input:
+  - Source: {{{source}}}
   - Destination: {{{destination}}}
   - Start Date: {{{startDate}}}
   - End Date: {{{endDate}}}

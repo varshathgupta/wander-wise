@@ -26,6 +26,9 @@ import { type DateRange } from "react-day-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 const formSchema = z.object({
+  source: z.string().min(2, {
+    message: "Source must be at least 2 characters.",
+  }),
   destination: z.string().min(2, {
     message: "Destination must be at least 2 characters.",
   }),
@@ -41,7 +44,7 @@ const formSchema = z.object({
 type TravelOptimizerFormProps = {
   setOptimizationResult: (result: OptimizeTravelDatesOutput | null) => void;
   setIsLoading: (isLoading: boolean) => void;
-  onFormSubmit: (destination: string) => void;
+  onFormSubmit: (data: { source: string; destination: string; }) => void;
 };
 
 export function TravelOptimizerForm({ setOptimizationResult, setIsLoading, onFormSubmit }: TravelOptimizerFormProps) {
@@ -50,6 +53,7 @@ export function TravelOptimizerForm({ setOptimizationResult, setIsLoading, onFor
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      source: "",
       destination: "",
       travelerDetails: "A couple looking for a mix of adventure and relaxation.",
       dateRange: undefined,
@@ -60,10 +64,11 @@ export function TravelOptimizerForm({ setOptimizationResult, setIsLoading, onFor
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     setOptimizationResult(null);
-    onFormSubmit(values.destination);
+    onFormSubmit({source: values.source, destination: values.destination});
 
     try {
       const result = await optimizeTravel({
+        source: values.source,
         destination: values.destination,
         startDate: format(values.dateRange.from, 'yyyy-MM-dd'),
         endDate: format(values.dateRange.to, 'yyyy-MM-dd'),
@@ -94,6 +99,19 @@ export function TravelOptimizerForm({ setOptimizationResult, setIsLoading, onFor
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
+          name="source"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Source Location</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., New York, USA" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="destination"
           render={({ field }) => (
             <FormItem>
@@ -111,7 +129,7 @@ export function TravelOptimizerForm({ setOptimizationResult, setIsLoading, onFor
             control={form.control}
             name="dateRange"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
+              <FormItem className="flex flex-col pt-2">
                 <FormLabel>Travel Dates</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -159,7 +177,7 @@ export function TravelOptimizerForm({ setOptimizationResult, setIsLoading, onFor
               control={form.control}
               name="currency"
               render={({ field }) => (
-                <FormItem className="flex flex-col">
+                <FormItem className="flex flex-col pt-2">
                   <FormLabel>Currency</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>

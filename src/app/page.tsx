@@ -15,10 +15,12 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 export default function Home() {
   const [optimizationResult, setOptimizationResult] = useState<OptimizeTravelDatesOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
 
-  const handleFormSubmit = (destination: string) => {
-    setDestination(destination);
+  const handleFormSubmit = (data: { source: string; destination: string; }) => {
+    setSource(data.source);
+    setDestination(data.destination);
   };
 
   const currencySymbols: { [key: string]: string } = {
@@ -56,7 +58,7 @@ export default function Home() {
     return (
       <>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-          <h2 className="text-3xl font-bold font-headline text-gray-800 mb-2 sm:mb-0">Trip Analysis for {destination}</h2>
+          <h2 className="text-3xl font-bold font-headline text-gray-800 mb-2 sm:mb-0">Trip Analysis for {source} to {destination}</h2>
           <Card className="shadow-md bg-primary text-primary-foreground p-4 rounded-lg">
             <div className="flex items-center gap-2">
               <DollarSign className="h-6 w-6"/>
