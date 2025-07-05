@@ -57,7 +57,7 @@ export function TravelOptimizerForm({ setOptimizationResult, setIsLoading, onFor
       destination: "",
       travelerDetails: "A couple looking for a mix of adventure and relaxation.",
       dateRange: undefined,
-      currency: "USD",
+      currency: "INR",
     },
   });
 
@@ -124,7 +124,7 @@ export function TravelOptimizerForm({ setOptimizationResult, setIsLoading, onFor
           )}
         />
         
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="dateRange"
@@ -137,10 +137,11 @@ export function TravelOptimizerForm({ setOptimizationResult, setIsLoading, onFor
                       <Button
                         variant={"outline"}
                         className={cn(
-                          "w-full pl-3 text-left font-normal",
+                          "w-full justify-start text-left font-normal",
                           !field.value?.from && "text-muted-foreground"
                         )}
                       >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
                         {field.value?.from ? (
                           field.value.to ? (
                             <>
@@ -153,7 +154,6 @@ export function TravelOptimizerForm({ setOptimizationResult, setIsLoading, onFor
                         ) : (
                           <span>Pick a date range</span>
                         )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>

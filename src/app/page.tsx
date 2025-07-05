@@ -29,7 +29,7 @@ export default function Home() {
     INR: "₹",
   };
   
-  const currencySymbol = optimizationResult ? currencySymbols[optimizationResult.currency] : '$';
+  const currencySymbol = optimizationResult ? currencySymbols[optimizationResult.currency] : '₹';
 
   const renderSkeletons = () => (
     <>
