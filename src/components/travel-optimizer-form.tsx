@@ -55,7 +55,7 @@ export function TravelOptimizerForm({ setOptimizationResult, setIsLoading, onFor
     defaultValues: {
       source: "",
       destination: "",
-      travelerDetails: "A couple looking for a mix of adventure and relaxation.",
+      travelerDetails: "",
       dateRange: undefined,
       currency: "INR",
     },
