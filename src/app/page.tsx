@@ -61,11 +61,10 @@ export default function Home() {
           <h2 className="text-3xl font-bold font-headline text-gray-800 mb-2 sm:mb-0">Trip Analysis for {source} to {destination}</h2>
           <Card className="shadow-md bg-primary text-primary-foreground p-4 rounded-lg">
             <div className="flex items-center gap-2">
-              <DollarSign className="h-6 w-6"/>
               <span className="text-sm">Total Est. Cost (p.p.)</span>
             </div>
              <p className="text-2xl font-bold text-right">
-                ~{currencySymbol}{optimizationResult.totalEstimatedCostPerPerson.toLocaleString()}
+                {currencySymbol}{optimizationResult.totalEstimatedCostPerPerson.toLocaleString()}
               </p>
           </Card>
         </div>
