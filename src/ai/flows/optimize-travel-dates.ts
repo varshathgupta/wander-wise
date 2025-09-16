@@ -1,4 +1,3 @@
-// This file is machine-generated - edit with caution!
 'use server';
 /**
  * @fileOverview A travel date/destination optimizer AI agent.
@@ -76,8 +75,8 @@ const DailyItinerarySchema = z.object({
 
 
 const OptimizeTravelDatesOutputSchema = z.object({
-  optimalDates: z.string().describe('Suggested optimal travel dates (YYYY-MM-DD).'),
-  alternativeDestinations: z.string().describe('Suggested alternative travel destinations.'),
+  optimalDates: z.string().describe('Suggested optimal travel dates (YYYY-MM-DD) only if applicable.'),
+  alternativeDestinations: z.string().describe('Suggested alternative travel destinations only if applicable.'),
   reasoning: z.string().describe('Reasoning for the date and/or destination changes.'),
   placesToVisit: z.array(z.string()).describe('A list of 3-5 recommended places to visit at the destination.'),
   totalEstimatedCostPerPerson: z.number().describe('The overall estimated total expense per person for the entire trip.'),
@@ -100,7 +99,7 @@ const prompt = ai.definePrompt({
   name: 'optimizeTravelDatesPrompt',
   input: {schema: OptimizeTravelDatesInputSchema},
   output: {schema: OptimizeTravelDatesOutputSchema},
-  prompt: `You are a travel expert specializing in optimizing travel dates and destinations.
+  prompt: `You are a local travel expert specializing in optimizing travel dates and destinations.
 
   Given the user's starting point, desired destination, dates, traveler details, and preferred currency, provide a comprehensive travel plan.
 
