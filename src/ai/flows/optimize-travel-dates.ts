@@ -15,8 +15,36 @@ const OptimizeTravelDatesInputSchema = z.object({
   destination: z.string().describe('The desired travel destination.'),
   startDate: z.string().describe('The desired start date for the trip (YYYY-MM-DD).'),
   endDate: z.string().describe('The desired end date for the trip (YYYY-MM-DD).'),
-  travelerDetails: z.string().describe('Details about the travelers, including their preferences and constraints.'),
+  tripType: z.enum(['adventure', 'honeymoon', 'leisure', 'luxury', 'pilgrim', 'others']).describe('The type of trip.'),
+  budgetRange: z.array(z.number()).length(2).describe('The budget range for the trip.'),
   currency: z.enum(['USD', 'EUR', 'INR']).describe('The currency for the expense estimation.'),
+  
+  // Level 2: Trip Character
+  easyBooking: z.boolean().optional().describe('Preference for easy booking options.'),
+  standardPlans: z.boolean().optional().describe('Preference for standard, pre-made plans.'),
+  travelOptions: z.array(z.string()).optional().describe('Preferred travel options (e.g., flight, train).'),
+  stayOptions: z.array(z.string()).optional().describe('Preferred accommodation types (e.g., hotel, hostel).'),
+  
+  // Honeymoon specific
+  honeymoonType: z.enum(['private', 'social', 'mix']).optional().describe('The style of honeymoon.'),
+  honeymoonAddOns: z.array(z.string()).optional().describe('Requested add-ons for the honeymoon.'),
+  
+  // Adventure specific
+  adventureLevel: z.enum(['mild', 'moderate', 'high']).optional().describe('The desired intensity of adventure activities.'),
+  adventureMembers: z.enum(['solo', 'sole-searching', 'group']).optional().describe('The group composition for the adventure trip.'),
+  
+  // Leisure specific
+  leisurePreference: z.array(z.string()).optional().describe('Preferences for leisure activities.'),
+  activityLevel: z.enum(['complete-rest', 'light-activities', 'balanced', 'active-relaxation']).optional().describe('The desired activity level for a leisure trip.'),
+  
+  // Level 3: Trip Experience
+  isPersonalised: z.boolean().optional().describe('Whether the user wants a personalized plan.'),
+  culturalImmersion: z.enum(['tourist-sites', 'authentic-local', 'homestays', 'temporary-local', 'not-keen']).optional().describe('The desired level of cultural immersion.'),
+  culturalActivities: z.array(z.string()).optional().describe('Specific cultural activities of interest.'),
+  languageBarriers: z.enum(['comfortable', 'need-help', 'learn-basics', 'not-concern']).optional().describe('Comfort level with language barriers.'),
+  foodDining: z.enum(['pure-veg', 'non-veg', 'mix']).optional().describe('Dietary preferences.'),
+  foodPreference: z.enum(['familiar', 'local-safe', 'street-authentic']).optional().describe('Preference for food types.'),
+  nightlifeInterest: z.enum(['early-quiet', 'local-bars', 'vibrant-clubs', 'cultural-evening']).optional().describe('Interest in nightlife.'),
 });
 export type OptimizeTravelDatesInput = z.infer<typeof OptimizeTravelDatesInputSchema>;
 
@@ -101,20 +129,18 @@ const prompt = ai.definePrompt({
   output: {schema: OptimizeTravelDatesOutputSchema},
   prompt: `You are a local travel expert specializing in optimizing travel dates and destinations.
 
-  Given the user's starting point, desired destination, dates, traveler details, and preferred currency, provide a comprehensive travel plan.
-
-  Your response MUST be in a valid JSON format that adheres to the provided schema.
+  Given the user's preferences, provide a comprehensive travel plan. Your response MUST be in a valid JSON format that adheres to the provided schema.
 
   - If the initial choices are not optimal, suggest alternative dates or destinations and explain your reasoning.
   - Provide a list of recommended places to visit.
   - Find the cheapest flight option from the source to the destination and provide its details.
   - If available, provide details for direct trains from the source to the destination.
-  - Recommend 2-3 accommodations based on a balance of high ratings and a nominal price.
-  - List famous local food spots with their details.
-  - Suggest activities and attractions, including their estimated prices.
+  - Recommend 2-3 accommodations based on a balance of high ratings and a nominal price, considering the user's stay options.
+  - List famous local food spots with their details, keeping in mind the user's food and dining preferences.
+  - Suggest activities and attractions, including their estimated prices, tailored to the trip type and user interests.
   - Detail the available local transportation options.
-  - Create a detailed day-by-day itinerary for the trip. Each day should have a title and a list of activities with times and descriptions, tailored to the traveler's preferences.
-  - Calculate an overall estimated total cost per person for the trip.
+  - Create a detailed day-by-day itinerary for the trip. Each day should have a title and a list of activities with times and descriptions, tailored to the traveler's preferences for trip type, activity level, cultural immersion, and nightlife.
+  - Calculate an overall estimated total cost per person for the trip, staying within the provided budget range.
   - ALL monetary values MUST be in the user's specified currency: {{{currency}}}.
 
   User Input:
@@ -122,8 +148,26 @@ const prompt = ai.definePrompt({
   - Destination: {{{destination}}}
   - Start Date: {{{startDate}}}
   - End Date: {{{endDate}}}
-  - Traveler Details: {{{travelerDetails}}}
+  - Trip Type: {{{tripType}}}
+  - Budget Range: {{{budgetRange}}}
   - Preferred Currency: {{{currency}}}
+  - Easy Booking Preference: {{{easyBooking}}}
+  - Standard Plan Preference: {{{standardPlans}}}
+  - Travel Options: {{{travelOptions}}}
+  - Stay Options: {{{stayOptions}}}
+  - Honeymoon Type: {{{honeymoonType}}}
+  - Honeymoon Add-ons: {{{honeymoonAddOns}}}
+  - Adventure Level: {{{adventureLevel}}}
+  - Adventure Members: {{{adventureMembers}}}
+  - Leisure Preference: {{{leisurePreference}}}
+  - Activity Level: {{{activityLevel}}}
+  - Personalization Preference: {{{isPersonalised}}}
+  - Cultural Immersion: {{{culturalImmersion}}}
+  - Cultural Activities: {{{culturalActivities}}}
+  - Language Barrier Comfort: {{{languageBarriers}}}
+  - Food & Dining: {{{foodDining}}}
+  - Food Preference: {{{foodPreference}}}
+  - Nightlife Interest: {{{nightlifeInterest}}}
 
   Output in JSON format.
   `,
