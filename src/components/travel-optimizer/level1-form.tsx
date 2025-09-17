@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { type DateRange } from "react-day-picker";
@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 import { getBudgetRanges, LevelFormProps } from "./form-schema";
+import { useFormContext } from "react-hook-form";
 
 export function Level1Form({ 
   control, 
@@ -22,8 +23,25 @@ export function Level1Form({
   destination = '', 
   tripType = 'leisure' 
 }: LevelFormProps) {
+  const { setValue, getValues } = useFormContext();
+  
   // Get dynamic budget ranges
   const budgetRanges = getBudgetRanges(destination, tripType, currency);
+
+  // Handle currency change and adjust budget range accordingly
+  useEffect(() => {
+    const currentBudgetRange = getValues('budgetRange');
+    if (currentBudgetRange && budgetRanges) {
+      // Check if current budget range is outside the new currency's range
+      const [currentMin, currentMax] = currentBudgetRange;
+      const { low, luxury } = budgetRanges;
+      
+      // If current values are outside the valid range, reset to medium range
+      if (currentMin < low[0] || currentMax > luxury[1] || currentMin > luxury[1] || currentMax < low[0]) {
+        setValue('budgetRange', budgetRanges.medium, { shouldValidate: true });
+      }
+    }
+  }, [currency, destination, tripType, budgetRanges, setValue, getValues]);
 
   return (
     <Card>
@@ -205,13 +223,19 @@ export function Level1Form({
                     min={budgetRanges.low[0]}
                     max={budgetRanges.luxury[1]}
                     step={currency === 'INR' ? 5000 : (currency === 'USD' ? 100 : 90)}
-                    value={field.value}
-                    onValueChange={field.onChange}
+                    value={field.value || budgetRanges.medium}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                    }}
                     className="w-full"
                   />
                   <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                    <span>{currency} {field.value[0].toLocaleString()}</span>
-                    <span>{currency} {field.value[1].toLocaleString()}</span>
+                    <span>{currency} {(field.value?.[0] || budgetRanges.medium[0]).toLocaleString()}</span>
+                    <span>{currency} {(field.value?.[1] || budgetRanges.medium[1]).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>Min: {currency} {budgetRanges.low[0].toLocaleString()}</span>
+                    <span>Max: {currency} {budgetRanges.luxury[1].toLocaleString()}</span>
                   </div>
                 </div>
               </FormControl>

@@ -19,7 +19,8 @@ import { FormNavigation } from "./form-navigation";
 import { 
   formSchema, 
   TravelOptimizerFormProps, 
-  TravelFormValues 
+  TravelFormValues,
+  getDefaultBudgetRange
 } from "./form-schema";
 
 export function TravelOptimizerForm({ 
@@ -41,7 +42,7 @@ export function TravelOptimizerForm({
       to: "",
       place: "",
       tripType: "leisure",
-      budgetRange: [25000, 75000],
+      budgetRange: getDefaultBudgetRange('INR'),
       currency: "INR",
       dateRange: undefined,
       easyBooking: false,
