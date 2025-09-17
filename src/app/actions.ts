@@ -12,16 +12,22 @@ const inputSchema = z.object({
   currency: z.enum(['USD', 'EUR', 'INR']),
 });
 
-export async function optimizeTravel(input: OptimizeTravelDatesInput): Promise<{ data: OptimizeTravelDatesOutput | null, error: string | null }> {
-  const parsedInput = inputSchema.safeParse(input);
-
-  if (!parsedInput.success) {
-    console.error("Invalid input:", parsedInput.error.flatten());
-    return { data: null, error: "Invalid input." };
-  }
-  
+export async function optimizeTravel(input: any): Promise<{ data: OptimizeTravelDatesOutput | null, error: string | null }> {
   try {
-    const result = await optimizeTravelDates(parsedInput.data);
+    const travelerDetails = JSON.parse(input.travelerDetails);
+
+    const flatInput = {
+      ...input,
+      ...travelerDetails,
+      ...travelerDetails.level2,
+      ...travelerDetails.level3,
+    };
+    
+    delete flatInput.travelerDetails;
+    delete flatInput.level2;
+    delete flatInput.level3;
+
+    const result = await optimizeTravelDates(flatInput);
     return { data: result, error: null };
   } catch (e) {
     console.error("Error in optimizeTravel action:", e);
