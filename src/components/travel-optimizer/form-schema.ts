@@ -37,7 +37,7 @@ export const getBudgetRanges = (destination: string, tripType: string, currency:
 // Get default budget range for a given currency
 export const getDefaultBudgetRange = (currency: string = 'INR') => {
   const ranges = getBudgetRanges('', 'leisure', currency);
-  return ranges.medium; // Use medium as default
+  return ranges.low; // Use medium as default
 };
 
 export const formSchema = z.object({
@@ -96,8 +96,9 @@ export type FormNavigationProps = {
   isSubmitting: boolean;
   onPreviousLevel: () => void;
   onNextLevel: () => void;
-  onSubmit: () => void;
   showSubmitOnly?: boolean; // when true, show only the Optimize button even before final level
+  onEarlyOptimizeIntent?: () => void; // mark user intent for early submit
+  isPersonalised?: boolean; // if user opted into personalised experience, suppress early optimize button at level 2
 };
 
 export type LevelFormProps = {

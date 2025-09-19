@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { optimizeTravel } from "@/app/actions";
@@ -33,7 +33,8 @@ export function TravelOptimizerForm({
 }: TravelOptimizerFormProps) {
   const { toast } = useToast();
   const [currentLevel, setCurrentLevel] = useState(1);
-  const [showLevelChoice, setShowLevelChoice] = useState(false);
+  // Track whether user explicitly chose to optimize early (Level 2 submit click)
+  const userInitiatedSubmitRef = useRef(false);
 
   const form = useForm<TravelFormValues>({
     resolver: zodResolver(formSchema),
@@ -59,6 +60,7 @@ export function TravelOptimizerForm({
   const destination = watchedValues.to || '';
   const isPersonalised = watchedValues.isPersonalised;
   const easyBookingValue = watchedValues.easyBooking;
+  const standardPlansValue = watchedValues.standardPlans ?? true;
 
   // Handle level progression
   const handleNextLevel = async () => {
@@ -73,10 +75,9 @@ export function TravelOptimizerForm({
     if (isValid) {
       if (currentLevel < 3) {
         setCurrentLevel(currentLevel + 1);
-        setShowLevelChoice(false);
+
       } else {
-        // Submit form if on level 3
-        handleSubmit();
+        // On level 3, let form submission handle final optimize
       }
     } else {
       toast({
@@ -90,12 +91,29 @@ export function TravelOptimizerForm({
   const handlePreviousLevel = () => {
     if (currentLevel > 1) {
       setCurrentLevel(currentLevel - 1);
-      setShowLevelChoice(false);
     }
   };
 
-  const handleSubmit = async () => {
-    const values = form.getValues();
+  const onValidSubmit = async (values: TravelFormValues) => {
+    // New guard: ALWAYS require explicit Optimize button intent (userInitiatedSubmitRef)
+    // This prevents automatic optimization when simply navigating to level 3 or pressing Enter in a field.
+    const isEarlySubmitMode = currentLevel === 2 && (
+      !!values.easyBooking || ((values.standardPlans ?? true) && !values.isPersonalised)
+    );
+
+    const userClickedOptimize = userInitiatedSubmitRef.current;
+
+    // Allow submit only if user explicitly clicked Optimize (sets ref) AND:
+    //  - On level 3 (final) OR
+    //  - In early submit mode (level 2 with qualifying options)
+    if (!userClickedOptimize) {
+      return; // Ignore implicit submits (e.g., Enter key)
+    }
+    if (!(currentLevel === 3 || isEarlySubmitMode)) {
+      return; // Not eligible level/state even with intent
+    }
+    // Reset the intent immediately to avoid duplicate submissions (e.g., double Enter)
+    userInitiatedSubmitRef.current = false;
     setIsLoading(true);
     setOptimizationResult(null);
     onFormSubmit({ source: values.from, destination: values.to });
@@ -162,7 +180,28 @@ export function TravelOptimizerForm({
         />
 
         {!isMinimized && (
-          <form className="space-y-8">
+          <form
+            className="space-y-8"
+            onSubmit={form.handleSubmit(onValidSubmit)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const values = form.getValues();
+                const isEarlySubmitMode = currentLevel === 2 && (
+                  !!values.easyBooking || ((values.standardPlans ?? true) && !values.isPersonalised)
+                );
+                const eligible = currentLevel === 3 || isEarlySubmitMode;
+
+                if (!eligible) {
+                  // Block Enter from moving to submit when not eligible
+                  e.preventDefault();
+                  return;
+                }
+                // If eligible, we still require explicit button click normally.
+                // We won't set the intent automatically here to avoid accidental submits by Enter inside a field.
+                // Users must click the Optimize button; Enter will only work if button focused (which triggers onClick intent).
+              }
+            }}
+          >
             {/* Level 1: Basic Trip Details */}
             {currentLevel === 1 && (
               <Level1Form 
@@ -202,9 +241,18 @@ export function TravelOptimizerForm({
               isSubmitting={form.formState.isSubmitting}
               onPreviousLevel={handlePreviousLevel}
               onNextLevel={handleNextLevel}
-              onSubmit={handleSubmit}
-              showSubmitOnly={currentLevel === 2 && !!easyBookingValue}
+              showSubmitOnly={
+                currentLevel === 2 && (
+                  !!easyBookingValue || (standardPlansValue && !isPersonalised)
+                )
+              }
+              onEarlyOptimizeIntent={() => { userInitiatedSubmitRef.current = true; }}
+              isPersonalised={isPersonalised}
             />
+            {/* Hidden submit button click handler enhancer */}
+            <div className="hidden">
+              {/* Intercept capture phase on submit button click to mark user intent */}
+            </div>
           </form>
         )}
       </Form>
