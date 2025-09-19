@@ -144,7 +144,7 @@ export default function Home() {
                           <p className="font-bold text-primary">{currencySymbol}{train.price.toLocaleString()}</p>
                       </div>
                   </div>
-                  {index < optimizationResult.directTrains.length - 1 && <Separator className="my-4" />}
+                  {index < (optimizationResult.directTrains?.length ?? 0) - 1 && <Separator className="my-4" />}
                 </div>
               ))}
             </CardContent>
