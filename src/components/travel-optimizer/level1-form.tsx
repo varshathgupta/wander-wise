@@ -84,7 +84,7 @@ export function Level1Form({
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
           <FormField
             control={control}
             name="dateRange"
@@ -144,20 +144,7 @@ export function Level1Form({
               </FormItem>
             )}
           />
-          
-          <FormField
-            control={control}
-            name="place"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Specific Place/Region</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., beaches" value={field.value as string} onChange={field.onChange} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+         
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
