@@ -7,7 +7,8 @@ export function FormNavigation({
   isSubmitting,
   onPreviousLevel,
   onNextLevel,
-  onSubmit
+  onSubmit,
+  showSubmitOnly = false
 }: FormNavigationProps) {
   return (
     <div className="flex items-center justify-between pt-6">
@@ -22,7 +23,7 @@ export function FormNavigation({
         Previous
       </Button>
 
-      {currentLevel < 3 ? (
+      {(!showSubmitOnly && currentLevel < 3) ? (
         <Button 
           type="button"
           onClick={onNextLevel}

@@ -97,6 +97,7 @@ export type FormNavigationProps = {
   onPreviousLevel: () => void;
   onNextLevel: () => void;
   onSubmit: () => void;
+  showSubmitOnly?: boolean; // when true, show only the Optimize button even before final level
 };
 
 export type LevelFormProps = {

@@ -45,8 +45,8 @@ export function TravelOptimizerForm({
       budgetRange: getDefaultBudgetRange('INR'),
       currency: "INR",
       dateRange: undefined,
-      easyBooking: false,
-      standardPlans: false,
+  easyBooking: false,
+  standardPlans: true,
       travelOptions: [],
       stayOptions: [],
       isPersonalised: false,
@@ -58,6 +58,7 @@ export function TravelOptimizerForm({
   const currency = watchedValues.currency || 'INR';
   const destination = watchedValues.to || '';
   const isPersonalised = watchedValues.isPersonalised;
+  const easyBookingValue = watchedValues.easyBooking;
 
   // Handle level progression
   const handleNextLevel = async () => {
@@ -178,8 +179,11 @@ export function TravelOptimizerForm({
                 <Level2Form 
                   control={form.control}
                   tripType={tripType}
+                  easyBookingValue={easyBookingValue}
                 />
-                <PersonalizationToggle control={form.control} />
+                {!easyBookingValue && (
+                  <PersonalizationToggle control={form.control} />
+                )}
               </>
             )}
 
@@ -199,6 +203,7 @@ export function TravelOptimizerForm({
               onPreviousLevel={handlePreviousLevel}
               onNextLevel={handleNextLevel}
               onSubmit={handleSubmit}
+              showSubmitOnly={currentLevel === 2 && !!easyBookingValue}
             />
           </form>
         )}
