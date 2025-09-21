@@ -214,10 +214,6 @@ GEMINI_API_KEY=your_gemini_api_key_here
 - [GenKit Documentation](https://genkit.dev/docs)
 - [Google AI Documentation](https://ai.google.dev/)
 
-## 🤝 Contributing
-
-Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/yourusername/wander-wise/issues).
-
 
 
 Built with ❤️ using Next.js and Google Gemini AI
