@@ -9,6 +9,8 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { googleMapsClient } from '@/lib/google-maps';
+import { Place, PlaceType2, TravelMode, TransitMode } from '@googlemaps/google-maps-services-js';
 
 const OptimizeTravelDatesInputSchema = z.object({
   source: z.string().describe('The starting location for the trip.'),
@@ -134,11 +136,6 @@ const prompt = ai.definePrompt({
   - If the initial choices are not optimal, suggest alternative dates or destinations and explain your reasoning.
   - Provide a list of recommended places to visit.
   - Find the cheapest flight option from the source to the destination and provide its details.
-  - If available, provide details for direct trains from the source to the destination.
-  - Recommend 2-3 accommodations based on a balance of high ratings and a nominal price, considering the user's stay options.
-  - List famous local food spots with their details, keeping in mind the user's food and dining preferences.
-  - Suggest activities and attractions, including their estimated prices, tailored to the trip type and user interests.
-  - Detail the available local transportation options.
   - Create a detailed day-by-day itinerary for the trip. Each day should have a title and a list of activities with times and descriptions, tailored to the traveler's preferences for trip type, activity level, cultural immersion, and nightlife.
   - Calculate an overall estimated total cost per person for the trip, staying within the provided budget range.
   - ALL monetary values MUST be in the user's specified currency: {{{currency}}}.
@@ -180,7 +177,104 @@ const optimizeTravelDatesFlow = ai.defineFlow(
     outputSchema: OptimizeTravelDatesOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    // Validate API key
+    if (!process.env.GOOGLE_API_KEY) {
+      throw new Error('GOOGLE_API_KEY is not defined in environment variables');
+    }
+
+    const { output } = await prompt(input);
+    
+    try {
+      const geocodeResult = await googleMapsClient.geocode({
+        params: {
+          address: input.destination,
+          key: process.env.GOOGLE_API_KEY,
+        }
+      });
+
+      if (geocodeResult.data.status !== 'OK' || geocodeResult.data.results.length === 0) {
+        throw new Error(`Could not geocode destination: ${input.destination}. Status: ${geocodeResult.data.status}`);
+      }
+
+      const location = geocodeResult.data.results[0].geometry.location;
+
+      const accommodations = await googleMapsClient.placesNearby({
+        params: {
+          location: location,
+          radius: 5000,
+          type: "lodging",
+          key: process.env.GOOGLE_API_KEY,
+        },
+      });
+
+      const foodSpots = await googleMapsClient.placesNearby({
+          params: {
+              location: location,
+              radius: 5000,
+              type: "restaurant",
+              key: process.env.GOOGLE_API_KEY,
+          },
+      });
+
+      const localTransport = await googleMapsClient.placesNearby({
+          params: {
+              location: location,
+              radius: 5000,
+              type: "transit_station",
+              key: process.env.GOOGLE_API_KEY,
+          },
+      });
+
+      const trainDirections = await googleMapsClient.directions({
+          params: {
+              origin: input.source,
+              destination: input.destination,
+              mode: TravelMode.transit,
+              transit_mode: [TransitMode.train],
+              key: process.env.GOOGLE_API_KEY,
+          },
+      });
+
+      const recommendedAccommodations = accommodations.data.results.slice(0, 3).map((place: Place) => ({
+          name: place.name || 'Unknown',
+          type: place.types?.[0] || 'lodging',
+          rating: place.rating || 0,
+          pricePerNight: 0, // Placeholder, as price is not directly available
+          bookingLink: '', // Placeholder
+      }));
+
+      const famousFoodSpots = foodSpots.data.results.slice(0, 5).map((place: Place) => ({
+          name: place.name || 'Unknown',
+          cuisine: place.types?.[0] || 'restaurant',
+          estimatedCost: place?.price_level ? place.price_level.toString() : '',
+          location: place.vicinity || 'Unknown location',
+      }));
+
+      const localTransportation = localTransport.data.results.slice(0, 5).map((place: Place) => ({
+          type: place.name || 'Unknown',
+          estimatedCost: place.price_level ? place.price_level.toString() : '',
+          details: place.formatted_address || ''  ,
+      }));
+
+      const directTrains = trainDirections.data.routes.map(route => (
+        {
+          trainName: route.legs[0].steps[0].transit_details?.line.name || 'N/A',
+          departureStation: route.legs[0].start_address,
+          arrivalStation: route.legs[0].end_address,
+          price: 0, // Placeholder
+          details: route.summary,
+      }));
+
+      return {
+          ...output!,
+          recommendedAccommodations,
+          famousFoodSpots,
+          localTransportation,
+          directTrains,
+      };
+    } catch (error: any) {
+      console.error('Google Maps API Error:', error.response?.data || error.message);
+      throw new Error(`Google Maps API request failed: ${error.response?.data?.error_message || error.message}`);
+    }
   }
 );

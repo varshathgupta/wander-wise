@@ -267,7 +267,7 @@ export default function Home() {
                     <div key={index}>
                         <div className="flex justify-between items-center">
                             <h3 className="font-bold">{spot.name} <Badge variant="outline">{spot.cuisine}</Badge></h3>
-                            <p className="font-bold text-amber-600">{spot.estimatedCost}</p>
+                            <p className="font-bold text-amber-600"> {currencySymbol} {spot.estimatedCost}</p>
                         </div>
                         <p className="text-sm text-muted-foreground">{spot.location}</p>
                         {index < optimizationResult.famousFoodSpots.length - 1 && <Separator className="my-4" />}
@@ -288,7 +288,7 @@ export default function Home() {
                     <div key={index}>
                         <div className="flex justify-between items-center">
                             <h3 className="font-bold">{transport.type}</h3>
-                            <p className="text-sm font-semibold text-muted-foreground">{transport.estimatedCost}</p>
+                            <p className="text-sm font-semibold text-muted-foreground">{currencySymbol} {transport.estimatedCost}</p>
                         </div>
                         <p className="text-sm text-muted-foreground">{transport.details}</p>
                         {index < optimizationResult.localTransportation.length - 1 && <Separator className="my-4" />}
