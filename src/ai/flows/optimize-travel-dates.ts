@@ -9,8 +9,11 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { googleMapsClient } from '@/lib/google-maps';
-import { Place, PlaceType2, TravelMode, TransitMode } from '@googlemaps/google-maps-services-js';
+import { googleMapsClient , placesClient} from '@/lib/google-maps';
+import { Place, PlaceType2, TravelMode, TransitMode, TransitRoutingPreference } from '@googlemaps/google-maps-services-js';
+import { getTopAccommodations } from '@/lib/get-top-accommodations';
+import { getTopRestaurants } from '@/lib/get-top-restaurants';
+
 
 const OptimizeTravelDatesInputSchema = z.object({
   source: z.string().describe('The starting location for the trip.'),
@@ -56,28 +59,6 @@ const FlightDetailsSchema = z.object({
     details: z.string().describe('Additional details about the flight, like layovers or duration.'),
 });
 
-const TrainDetailsSchema = z.object({
-    trainName: z.string().describe('The name or number of the train.'),
-    departureStation: z.string().describe('The departure station.'),
-    arrivalStation: z.string().describe('The arrival station.'),
-    price: z.number().describe('The estimated price of the train ticket per person.'),
-    details: z.string().describe('Additional details about the train journey, like duration or class.'),
-});
-
-const AccommodationDetailsSchema = z.object({
-    name: z.string().describe('The name of the accommodation.'),
-    type: z.string().describe('Type of accommodation (e.g., Hotel, Hostel, Airbnb).'),
-    rating: z.number().describe('The rating of the accommodation (e.g., 4.5).'),
-    pricePerNight: z.number().describe('The estimated price per night.'),
-    bookingLink: z.string().describe('A link to book the accommodation.'),
-});
-
-const FoodSpotSchema = z.object({
-    name: z.string().describe('The name of the food spot.'),
-    cuisine: z.string().describe('The type of cuisine served.'),
-    estimatedCost: z.string().describe('Estimated cost per person (e.g., $, $$, $$$).'),
-    location: z.string().describe('The location or address of the food spot.'),
-});
 
 const ActivityDetailsSchema = z.object({
     name: z.string().describe('The name of the activity or attraction.'),
@@ -112,10 +93,7 @@ const OptimizeTravelDatesOutputSchema = z.object({
   totalEstimatedCostPerPerson: z.number().describe('The overall estimated total expense per person for the entire trip.'),
   currency: z.enum(['USD', 'EUR', 'INR']).describe('The currency used for all cost estimations.'),
   cheapestFlight: FlightDetailsSchema.describe('Details for the cheapest flight option found.'),
-  directTrains: z.array(TrainDetailsSchema).optional().describe('Details for direct train options, if available.'),
-  recommendedAccommodations: z.array(AccommodationDetailsSchema).describe('A list of 2-3 recommended accommodations based on high ratings and nominal price.'),
-  famousFoodSpots: z.array(FoodSpotSchema).describe('A list of famous local food spots.'),
-  recommendedActivities: z.array(ActivityDetailsSchema).describe('A list of recommended activities with their prices.'),
+  recommendedActivities: z.array(ActivityDetailsSchema).describe('List of recommended activities and attractions.'),
   localTransportation: z.array(TransportationDetailsSchema).describe('Details about local transportation options.'),
   itinerary: z.array(DailyItinerarySchema).describe("A detailed day-by-day itinerary for the trip based on the traveler's preferences."),
 });
@@ -196,72 +174,40 @@ const optimizeTravelDatesFlow = ai.defineFlow(
         throw new Error(`Could not geocode destination: ${input.destination}. Status: ${geocodeResult.data.status}`);
       }
 
-      const location = geocodeResult.data.results[0].geometry.location;
+      const { lat, lng } = geocodeResult.data.results[0].geometry.location;
 
-      const accommodations = await googleMapsClient.placesNearby({
-        params: {
-          location: location,
-          radius: 5000,
-          type: "lodging",
-          key: process.env.GOOGLE_API_KEY,
-        },
-      });
 
-      const foodSpots = await googleMapsClient.placesNearby({
-          params: {
-              location: location,
-              radius: 5000,
-              type: "restaurant",
-              key: process.env.GOOGLE_API_KEY,
-          },
-      });
 
-      const localTransport = await googleMapsClient.placesNearby({
-          params: {
-              location: location,
-              radius: 5000,
-              type: "transit_station",
-              key: process.env.GOOGLE_API_KEY,
-          },
-      });
 
       const trainDirections = await googleMapsClient.directions({
           params: {
               origin: input.source,
               destination: input.destination,
               mode: TravelMode.transit,
-              transit_mode: [TransitMode.train],
+              transit_mode: [ TransitMode.train],
+              // transit_routing_preference: TransitRoutingPreference.fewer_transfers,
+              // alternatives: true,
               key: process.env.GOOGLE_API_KEY,
           },
       });
 
-      const recommendedAccommodations = accommodations.data.results.slice(0, 3).map((place: Place) => ({
-          name: place.name || 'Unknown',
-          type: place.types?.[0] || 'lodging',
-          rating: place.rating || 0,
-          pricePerNight: 0, // Placeholder, as price is not directly available
-          bookingLink: '', // Placeholder
-      }));
+      // console.log('Train Directions Response:', JSON.stringify(trainDirections.data, null, 2));
+      // console.log('Number of routes found:', trainDirections.data.routes.length);
 
-      const famousFoodSpots = foodSpots.data.results.slice(0, 5).map((place: Place) => ({
-          name: place.name || 'Unknown',
-          cuisine: place.types?.[0] || 'restaurant',
-          estimatedCost: place?.price_level ? place.price_level.toString() : '',
-          location: place.vicinity || 'Unknown location',
-      }));
+      const recommendedAccommodations = await getTopAccommodations( lat, lng, 3);
 
-      const localTransportation = localTransport.data.results.slice(0, 5).map((place: Place) => ({
-          type: place.name || 'Unknown',
-          estimatedCost: place.price_level ? place.price_level.toString() : '',
-          details: place.formatted_address || ''  ,
-      }));
+      const famousFoodSpots = await getTopRestaurants( lat, lng, 5);
 
-      const directTrains = trainDirections.data.routes.map(route => (
+
+
+      const directTrains = trainDirections.data.routes.slice(0, 4).map(route => (
         {
-          trainName: route.legs[0].steps[0].transit_details?.line.name || 'N/A',
-          departureStation: route.legs[0].start_address,
-          arrivalStation: route.legs[0].end_address,
-          price: 0, // Placeholder
+          trainName: route.legs[0].steps[0].transit_details.line.agencies[0].name || 'N/A',
+          departureStation: route.legs[0].start_address.split(',')[0],
+          arrivalStation: route.legs[0].end_address.split(',')[0],
+          price: route.fare?.currency || 'N/A',
+          fareValue: route.fare?.value || 0,
+          duration: route.legs[0].duration?.text || 'N/A',
           details: route.summary,
       }));
 
@@ -269,7 +215,7 @@ const optimizeTravelDatesFlow = ai.defineFlow(
           ...output!,
           recommendedAccommodations,
           famousFoodSpots,
-          localTransportation,
+          // localTransportation,
           directTrains,
       };
     } catch (error: any) {

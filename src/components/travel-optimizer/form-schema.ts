@@ -83,9 +83,6 @@ export const formSchema = z.object({
 export type TravelFormValues = z.infer<typeof formSchema>;
 
 export type TravelOptimizerFormProps = {
-  setOptimizationResult: (result: any | null) => void;
-  setIsLoading: (isLoading: boolean) => void;
-  onFormSubmit: (data: { source: string; destination: string; }) => void;
   isMinimized?: boolean;
   onToggleMinimize?: () => void;
   hasResults?: boolean;

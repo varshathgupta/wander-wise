@@ -6,6 +6,7 @@ import { useState, useRef } from "react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { optimizeTravel } from "@/app/actions";
+import { useTravelStore } from "@/store/travel-store";
 
 import { Form } from "@/components/ui/form";
 import { PersonalizationToggle } from "./level2-form/personalization-toggle";
@@ -24,9 +25,6 @@ import {
 } from "./form-schema";
 
 export function TravelOptimizerForm({ 
-  setOptimizationResult, 
-  setIsLoading, 
-  onFormSubmit, 
   isMinimized = false, 
   onToggleMinimize, 
   hasResults = false 
@@ -35,6 +33,15 @@ export function TravelOptimizerForm({
   const [currentLevel, setCurrentLevel] = useState(1);
   // Track whether user explicitly chose to optimize early (Level 2 submit click)
   const userInitiatedSubmitRef = useRef(false);
+  
+  // Use Zustand store instead of local state
+  const { 
+    setOptimizationResult, 
+    setLoading, 
+    setError,
+    setTripMetadata,
+    setLastFormData 
+  } = useTravelStore();
 
   const form = useForm<TravelFormValues>({
     resolver: zodResolver(formSchema),
@@ -114,9 +121,10 @@ export function TravelOptimizerForm({
     }
     // Reset the intent immediately to avoid duplicate submissions (e.g., double Enter)
     userInitiatedSubmitRef.current = false;
-    setIsLoading(true);
+    setLoading(true);
     setOptimizationResult(null);
-    onFormSubmit({ source: values.from, destination: values.to });
+    setTripMetadata(values.from, values.to);
+    setLastFormData(values);
 
     try {
       const result = await optimizeTravel({
@@ -164,7 +172,7 @@ export function TravelOptimizerForm({
       });
       setOptimizationResult(null);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 

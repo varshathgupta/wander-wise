@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { OptimizeTravelDatesOutput } from "@/ai/flows/optimize-travel-dates";
+import { useTravelStore, useOptimizationResult, useTripMetadata, useIsLoading, useCurrencyInfo } from "@/store/travel-store";
 import { TravelOptimizerForm } from "@/components/travel-optimizer-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plane, CalendarDays, Map, Lightbulb, Search, MapPin, DollarSign, PlaneTakeoff, Hotel, UtensilsCrossed, PartyPopper, Bus, Star, ExternalLink, ClipboardList, Train } from "lucide-react";
@@ -13,23 +13,13 @@ import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export default function Home() {
-  const [optimizationResult, setOptimizationResult] = useState<OptimizeTravelDatesOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [source, setSource] = useState("");
-  const [destination, setDestination] = useState("");
-
-  const handleFormSubmit = (data: { source: string; destination: string; }) => {
-    setSource(data.source);
-    setDestination(data.destination);
-  };
-
-  const currencySymbols: { [key: string]: string } = {
-    USD: "$",
-    EUR: "€",
-    INR: "₹",
-  };
+  // Use Zustand store hooks instead of local state
+  const optimizationResult = useOptimizationResult();
+  const isLoading = useIsLoading();
+  const { source, destination } = useTripMetadata();
+  const { symbol: currencySymbol } = useCurrencyInfo();
   
-  const currencySymbol = optimizationResult ? currencySymbols[optimizationResult.currency] : '₹';
+  const [isFormMinimized, setIsFormMinimized] = useState(false);
 
   const renderSkeletons = () => (
     <>
@@ -132,7 +122,7 @@ export default function Home() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {optimizationResult.directTrains.map((train, index) => (
+              {(optimizationResult.directTrains || []).map((train, index) => (
                 <div key={index}>
                   <div className="flex justify-between items-start gap-4">
                       <div>
@@ -157,9 +147,9 @@ export default function Home() {
               <Hotel />
              Recommended Accommodations
             </CardTitle>
-          </CardHeader>
+            </CardHeader>
           <CardContent className="space-y-4">
-            {optimizationResult.recommendedAccommodations.map((hotel, index) => (
+            {(optimizationResult.recommendedAccommodations || []).map((hotel, index) => (
               <div key={index}>
                 <div className="flex justify-between items-start gap-4">
                     <div>
@@ -175,7 +165,7 @@ export default function Home() {
                         </Link>
                     </div>
                 </div>
-                {index < optimizationResult.recommendedAccommodations.length - 1 && <Separator className="my-4" />}
+                {index < (optimizationResult.recommendedAccommodations?.length ?? 0) - 1 && <Separator className="my-4" />}
               </div>
             ))}
           </CardContent>
@@ -190,7 +180,7 @@ export default function Home() {
             </CardHeader>
             <CardContent className="text-muted-foreground prose">
                 <ul className="list-disc space-y-2 pl-5">
-                {optimizationResult.placesToVisit.map((place, index) => (
+                {(optimizationResult.placesToVisit || []).map((place, index) => (
                     <li key={index}>{place}</li>
                 ))}
                 </ul>
@@ -207,14 +197,14 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <Accordion type="single" collapsible className="w-full">
-                {optimizationResult.itinerary.map((dayPlan, index) => (
+                {(optimizationResult.itinerary || []).map((dayPlan, index) => (
                   <AccordionItem value={`item-${index}`} key={index}>
                     <AccordionTrigger className="font-bold text-left hover:no-underline">
                       Day {dayPlan.day}: {dayPlan.title}
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="space-y-6 pl-4 border-l-2 border-primary/20 ml-2 mt-2">
-                        {dayPlan.activities.map((activity, actIndex) => (
+                        {(dayPlan.activities || []).map((activity, actIndex) => (
                           <div key={actIndex} className="relative">
                             <div className="absolute -left-[1.45rem] top-1 h-4 w-4 rounded-full bg-primary border-2 border-background" />
                             <p className="font-semibold">{activity.time}: {activity.activity}</p>
@@ -238,7 +228,7 @@ export default function Home() {
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                {optimizationResult.recommendedActivities.map((activity, index) => (
+                {(optimizationResult.recommendedActivities || []).map((activity, index) => (
                     <div key={index}>
                         <div className="flex justify-between items-start">
                             <div>
@@ -263,14 +253,14 @@ export default function Home() {
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                {optimizationResult.famousFoodSpots.map((spot, index) => (
+                {(optimizationResult.famousFoodSpots || []).map((spot, index) => (
                     <div key={index}>
                         <div className="flex justify-between items-center">
                             <h3 className="font-bold">{spot.name} <Badge variant="outline">{spot.cuisine}</Badge></h3>
                             <p className="font-bold text-amber-600"> {currencySymbol} {spot.estimatedCost}</p>
                         </div>
                         <p className="text-sm text-muted-foreground">{spot.location}</p>
-                        {index < optimizationResult.famousFoodSpots.length - 1 && <Separator className="my-4" />}
+                        {index < (optimizationResult.famousFoodSpots?.length ?? 0) - 1 && <Separator className="my-4" />}
                     </div>
                 ))}
             </CardContent>
@@ -284,7 +274,7 @@ export default function Home() {
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                {optimizationResult.localTransportation.map((transport, index) => (
+                {(optimizationResult.localTransportation || []).map((transport, index) => (
                     <div key={index}>
                         <div className="flex justify-between items-center">
                             <h3 className="font-bold">{transport.type}</h3>
@@ -330,11 +320,7 @@ export default function Home() {
                 <p className="text-muted-foreground mb-4 text-sm">
                   Tell us your dream destination and travel dates, and our AI will create a detailed itinerary for you.
                 </p>
-                <TravelOptimizerForm 
-                  setOptimizationResult={setOptimizationResult} 
-                  setIsLoading={setIsLoading}
-                  onFormSubmit={handleFormSubmit}
-                />
+                <TravelOptimizerForm />
               </CardContent>
             </Card>
           </div>
