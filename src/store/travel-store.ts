@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import type { OptimizeTravelDatesOutput } from '@/ai/flows/optimize-travel-dates';
+import type { EnrichedActivity } from '@/lib/enrich-itinerary';
 
 // Extended type that includes data from Google Maps API
 export type ExtendedOptimizationResult = OptimizeTravelDatesOutput & {
@@ -23,6 +24,12 @@ export type ExtendedOptimizationResult = OptimizeTravelDatesOutput & {
     cuisine: string;
     estimatedCost: string;
     location: string;
+  }>;
+  // Override itinerary type with enriched version
+  itinerary: Array<{
+    day: number;
+    title: string;
+    activities: EnrichedActivity[];
   }>;
 };
 

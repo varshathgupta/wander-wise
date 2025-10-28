@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ItineraryCard } from "@/components/travel-results/itinerary-card";
 
 export default function Home() {
   // Use Zustand store hooks instead of local state
@@ -187,38 +188,10 @@ export default function Home() {
             </CardContent>
         </Card>
 
-        {optimizationResult.itinerary && optimizationResult.itinerary.length > 0 && (
-          <Card className="shadow-lg bg-white mt-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-headline text-primary">
-                <ClipboardList />
-                Daily Itinerary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Accordion type="single" collapsible className="w-full">
-                {(optimizationResult.itinerary || []).map((dayPlan, index) => (
-                  <AccordionItem value={`item-${index}`} key={index}>
-                    <AccordionTrigger className="font-bold text-left hover:no-underline">
-                      Day {dayPlan.day}: {dayPlan.title}
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-6 pl-4 border-l-2 border-primary/20 ml-2 mt-2">
-                        {(dayPlan.activities || []).map((activity, actIndex) => (
-                          <div key={actIndex} className="relative">
-                            <div className="absolute -left-[1.45rem] top-1 h-4 w-4 rounded-full bg-primary border-2 border-background" />
-                            <p className="font-semibold">{activity.time}: {activity.activity}</p>
-                            <p className="text-sm text-muted-foreground">{activity.description}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </CardContent>
-          </Card>
-        )}
+        {/* Enhanced Itinerary Card with Google Maps Integration */}
+        <div className="mt-8">
+          <ItineraryCard />
+        </div>
 
         <Card className="shadow-lg bg-white mt-8">
             <CardHeader>

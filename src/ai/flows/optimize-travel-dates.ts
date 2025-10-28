@@ -13,6 +13,7 @@ import { googleMapsClient , placesClient} from '@/lib/google-maps';
 import { Place, PlaceType2, TravelMode, TransitMode, TransitRoutingPreference } from '@googlemaps/google-maps-services-js';
 import { getTopAccommodations } from '@/lib/get-top-accommodations';
 import { getTopRestaurants } from '@/lib/get-top-restaurants';
+import { enrichItinerary, type EnrichedActivity } from '@/lib/enrich-itinerary';
 
 
 const OptimizeTravelDatesInputSchema = z.object({
@@ -72,10 +73,43 @@ const TransportationDetailsSchema = z.object({
     details: z.string().describe('Additional details or tips about using this transportation.'),
 });
 
+const NearbyDiningSchema = z.object({
+    name: z.string().describe('The name of the nearby restaurant or cafe.'),
+    type: z.string().describe('The type of establishment (restaurant, cafe, etc.).'),
+    rating: z.number().describe('The rating of the establishment.'),
+    priceLevel: z.string().optional().describe('The price level indicator.'),
+    address: z.string().describe('The address of the establishment.'),
+    mapUrl: z.string().describe('Google Maps URL for the establishment.'),
+    distance: z.string().optional().describe('Distance from the activity location.'),
+});
+
+const DirectionsInfoSchema = z.object({
+    origin: z.string().describe('Starting point address.'),
+    destination: z.string().describe('Destination address.'),
+    travelMode: z.string().describe('Mode of travel (driving, walking, transit, etc.).'),
+    duration: z.string().describe('Estimated travel duration.'),
+    distance: z.string().describe('Travel distance.'),
+    steps: z.array(z.string()).optional().describe('Step-by-step directions.'),
+});
+
 const ItineraryItemSchema = z.object({
     time: z.string().describe("Time of day for the activity (e.g., Morning, 9:00 AM, Afternoon, Evening)."),
     activity: z.string().describe("The name of the activity or place to visit."),
     description: z.string().describe("A brief description of the activity and why it's recommended."),
+    placeId: z.string().optional().describe("Google Places ID for the location."),
+    address: z.string().optional().describe("Physical address of the location."),
+    coordinates: z.object({
+        lat: z.number(),
+        lng: z.number(),
+    }).optional().describe("GPS coordinates of the location."),
+    mapUrl: z.string().optional().describe("Google Maps URL for the location."),
+    entryFee: z.string().optional().describe("Entry fee or price range for the activity."),
+    openingHours: z.string().optional().describe("Opening hours of the location."),
+    rating: z.number().optional().describe("Google rating of the location."),
+    directions: DirectionsInfoSchema.optional().describe("Directions from the previous location."),
+    nearbyDining: z.array(NearbyDiningSchema).optional().describe("Nearby top-rated restaurants and cafes."),
+    websiteUrl: z.string().optional().describe("Official website URL."),
+    phoneNumber: z.string().optional().describe("Contact phone number."),
 });
 
 const DailyItinerarySchema = z.object({
@@ -198,6 +232,9 @@ const optimizeTravelDatesFlow = ai.defineFlow(
 
       const famousFoodSpots = await getTopRestaurants( lat, lng, 5);
 
+      // Enrich the itinerary with Google Maps data
+      const enrichedItinerary = await enrichItinerary(output!.itinerary, input.destination);
+
 
 
       const directTrains = trainDirections.data.routes.slice(0, 4).map(route => (
@@ -213,6 +250,7 @@ const optimizeTravelDatesFlow = ai.defineFlow(
 
       return {
           ...output!,
+          itinerary: enrichedItinerary,
           recommendedAccommodations,
           famousFoodSpots,
           // localTransportation,
