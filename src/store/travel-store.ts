@@ -21,9 +21,11 @@ export type ExtendedOptimizationResult = OptimizeTravelDatesOutput & {
   }>;
   famousFoodSpots?: Array<{
     name: string;
-    cuisine: string;
-    estimatedCost: string;
-    location: string;
+    type?: string;
+    cuisine?: string;
+    estimatedCost?: string;
+    location?: string;
+    rating?: number;
   }>;
   // Override itinerary type with enriched version
   itinerary: Array<{

@@ -6,10 +6,12 @@ import { useState, useRef } from "react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { optimizeTravel } from "@/app/actions";
-import { useTravelStore } from "@/store/travel-store";
+import { useTravelStore, useIsLoading } from "@/store/travel-store";
+import { useRouter } from "next/navigation";
 
 import { Form } from "@/components/ui/form";
 import { PersonalizationToggle } from "./level2-form/personalization-toggle";
+import { TravelLoader } from "@/components/travel-loader";
 
 import { FormHeader } from "./form-header";
 import { Level1Form } from "./level1-form";
@@ -29,6 +31,7 @@ export function TravelOptimizerForm({
   onToggleMinimize, 
   hasResults = false 
 }: TravelOptimizerFormProps) {
+  const router = useRouter();
   const { toast } = useToast();
   const [currentLevel, setCurrentLevel] = useState(1);
   // Track whether user explicitly chose to optimize early (Level 2 submit click)
@@ -42,6 +45,8 @@ export function TravelOptimizerForm({
     setTripMetadata,
     setLastFormData 
   } = useTravelStore();
+  
+  const isLoading = useIsLoading();
 
   const form = useForm<TravelFormValues>({
     resolver: zodResolver(formSchema),
@@ -163,6 +168,9 @@ export function TravelOptimizerForm({
       }
       
       setOptimizationResult(result.data);
+      
+      // Redirect to suggestions page after successful optimization
+      router.push("/suggestions");
 
     } catch (error) {
       toast({
@@ -177,11 +185,15 @@ export function TravelOptimizerForm({
   };
 
   return (
-    <div className={`transition-all duration-300 ${isMinimized ? 'h-20 overflow-hidden' : 'h-auto'}`}>
-      <Form {...form}>
-        {/* Form Header with Progress */}
-        <FormHeader 
-          currentLevel={currentLevel}
+    <>
+      {/* Show loader during API fetch */}
+      {isLoading && <TravelLoader />}
+      
+      <div className={`transition-all duration-300 ${isMinimized ? 'h-20 overflow-hidden' : 'h-auto'}`}>
+        <Form {...form}>
+          {/* Form Header with Progress */}
+          <FormHeader 
+            currentLevel={currentLevel}
           isMinimized={isMinimized}
           hasResults={hasResults}
           onToggleMinimize={onToggleMinimize}
@@ -260,10 +272,11 @@ export function TravelOptimizerForm({
             {/* Hidden submit button click handler enhancer */}
             <div className="hidden">
               {/* Intercept capture phase on submit button click to mark user intent */}
-            </div>
+                        </div>
           </form>
         )}
       </Form>
-    </div>
+      </div>
+    </>
   );
 }
