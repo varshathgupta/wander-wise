@@ -133,8 +133,38 @@ const OptimizeTravelDatesOutputSchema = z.object({
 });
 export type OptimizeTravelDatesOutput = z.infer<typeof OptimizeTravelDatesOutputSchema>;
 
+// Helper function for exponential backoff retry
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: any;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      
+      // Check if it's a rate limit error
+      if (error.message?.includes('429') || error.message?.includes('Resource exhausted')) {
+        const delay = baseDelay * Math.pow(2, i);
+        console.log(`Rate limit hit, retrying in ${delay}ms... (attempt ${i + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      // If it's not a rate limit error, throw immediately
+      throw error;
+    }
+  }
+  
+  throw lastError;
+}
+
 export async function optimizeTravelDates(input: OptimizeTravelDatesInput): Promise<OptimizeTravelDatesOutput> {
-  return optimizeTravelDatesFlow(input);
+  return retryWithBackoff(() => optimizeTravelDatesFlow(input));
 }
 
 const prompt = ai.definePrompt({
