@@ -31,7 +31,18 @@ export async function optimizeTravel(input: any): Promise<{ data: OptimizeTravel
     return { data: result, error: null };
   } catch (e) {
     console.error("Error in optimizeTravel action:", e);
-    const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred while optimizing your trip.";
-    return { data: null, error: errorMessage };
+    
+    // Provide specific error messages for rate limiting
+    if (e instanceof Error) {
+      if (e.message.includes('429') || e.message.includes('Resource exhausted')) {
+        return { 
+          data: null, 
+          error: "We're experiencing high demand right now. Please try again in a few minutes. If the issue persists, check your API quota at https://makersuite.google.com/app/apikey" 
+        };
+      }
+      return { data: null, error: e.message };
+    }
+    
+    return { data: null, error: "An unexpected error occurred while optimizing your trip." };
   }
 }

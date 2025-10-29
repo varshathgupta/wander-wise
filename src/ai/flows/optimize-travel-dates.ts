@@ -9,6 +9,12 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { googleMapsClient , placesClient} from '@/lib/google-maps';
+import { Place, PlaceType2, TravelMode, TransitMode, TransitRoutingPreference } from '@googlemaps/google-maps-services-js';
+import { getTopAccommodations } from '@/lib/get-top-accommodations';
+import { getTopRestaurants } from '@/lib/get-top-restaurants';
+import { enrichItinerary, type EnrichedActivity } from '@/lib/enrich-itinerary';
+
 
 const OptimizeTravelDatesInputSchema = z.object({
   source: z.string().describe('The starting location for the trip.'),
@@ -54,28 +60,6 @@ const FlightDetailsSchema = z.object({
     details: z.string().describe('Additional details about the flight, like layovers or duration.'),
 });
 
-const TrainDetailsSchema = z.object({
-    trainName: z.string().describe('The name or number of the train.'),
-    departureStation: z.string().describe('The departure station.'),
-    arrivalStation: z.string().describe('The arrival station.'),
-    price: z.number().describe('The estimated price of the train ticket per person.'),
-    details: z.string().describe('Additional details about the train journey, like duration or class.'),
-});
-
-const AccommodationDetailsSchema = z.object({
-    name: z.string().describe('The name of the accommodation.'),
-    type: z.string().describe('Type of accommodation (e.g., Hotel, Hostel, Airbnb).'),
-    rating: z.number().describe('The rating of the accommodation (e.g., 4.5).'),
-    pricePerNight: z.number().describe('The estimated price per night.'),
-    bookingLink: z.string().describe('A link to book the accommodation.'),
-});
-
-const FoodSpotSchema = z.object({
-    name: z.string().describe('The name of the food spot.'),
-    cuisine: z.string().describe('The type of cuisine served.'),
-    estimatedCost: z.string().describe('Estimated cost per person (e.g., $, $$, $$$).'),
-    location: z.string().describe('The location or address of the food spot.'),
-});
 
 const ActivityDetailsSchema = z.object({
     name: z.string().describe('The name of the activity or attraction.'),
@@ -89,10 +73,43 @@ const TransportationDetailsSchema = z.object({
     details: z.string().describe('Additional details or tips about using this transportation.'),
 });
 
+const NearbyDiningSchema = z.object({
+    name: z.string().describe('The name of the nearby restaurant or cafe.'),
+    type: z.string().describe('The type of establishment (restaurant, cafe, etc.).'),
+    rating: z.number().describe('The rating of the establishment.'),
+    priceLevel: z.string().optional().describe('The price level indicator.'),
+    address: z.string().describe('The address of the establishment.'),
+    mapUrl: z.string().describe('Google Maps URL for the establishment.'),
+    distance: z.string().optional().describe('Distance from the activity location.'),
+});
+
+const DirectionsInfoSchema = z.object({
+    origin: z.string().describe('Starting point address.'),
+    destination: z.string().describe('Destination address.'),
+    travelMode: z.string().describe('Mode of travel (driving, walking, transit, etc.).'),
+    duration: z.string().describe('Estimated travel duration.'),
+    distance: z.string().describe('Travel distance.'),
+    steps: z.array(z.string()).optional().describe('Step-by-step directions.'),
+});
+
 const ItineraryItemSchema = z.object({
     time: z.string().describe("Time of day for the activity (e.g., Morning, 9:00 AM, Afternoon, Evening)."),
     activity: z.string().describe("The name of the activity or place to visit."),
     description: z.string().describe("A brief description of the activity and why it's recommended."),
+    placeId: z.string().optional().describe("Google Places ID for the location."),
+    address: z.string().optional().describe("Physical address of the location."),
+    coordinates: z.object({
+        lat: z.number(),
+        lng: z.number(),
+    }).optional().describe("GPS coordinates of the location."),
+    mapUrl: z.string().optional().describe("Google Maps URL for the location."),
+    entryFee: z.string().optional().describe("Entry fee or price range for the activity."),
+    openingHours: z.string().optional().describe("Opening hours of the location."),
+    rating: z.number().optional().describe("Google rating of the location."),
+    directions: DirectionsInfoSchema.optional().describe("Directions from the previous location."),
+    nearbyDining: z.array(NearbyDiningSchema).optional().describe("Nearby top-rated restaurants and cafes."),
+    websiteUrl: z.string().optional().describe("Official website URL."),
+    phoneNumber: z.string().optional().describe("Contact phone number."),
 });
 
 const DailyItinerarySchema = z.object({
@@ -110,17 +127,44 @@ const OptimizeTravelDatesOutputSchema = z.object({
   totalEstimatedCostPerPerson: z.number().describe('The overall estimated total expense per person for the entire trip.'),
   currency: z.enum(['USD', 'EUR', 'INR']).describe('The currency used for all cost estimations.'),
   cheapestFlight: FlightDetailsSchema.describe('Details for the cheapest flight option found.'),
-  directTrains: z.array(TrainDetailsSchema).optional().describe('Details for direct train options, if available.'),
-  recommendedAccommodations: z.array(AccommodationDetailsSchema).describe('A list of 2-3 recommended accommodations based on high ratings and nominal price.'),
-  famousFoodSpots: z.array(FoodSpotSchema).describe('A list of famous local food spots.'),
-  recommendedActivities: z.array(ActivityDetailsSchema).describe('A list of recommended activities with their prices.'),
+  recommendedActivities: z.array(ActivityDetailsSchema).describe('List of recommended activities and attractions.'),
   localTransportation: z.array(TransportationDetailsSchema).describe('Details about local transportation options.'),
   itinerary: z.array(DailyItinerarySchema).describe("A detailed day-by-day itinerary for the trip based on the traveler's preferences."),
 });
 export type OptimizeTravelDatesOutput = z.infer<typeof OptimizeTravelDatesOutputSchema>;
 
+// Helper function for exponential backoff retry
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: any;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      
+      // Check if it's a rate limit error
+      if (error.message?.includes('429') || error.message?.includes('Resource exhausted')) {
+        const delay = baseDelay * Math.pow(2, i);
+        console.log(`Rate limit hit, retrying in ${delay}ms... (attempt ${i + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      // If it's not a rate limit error, throw immediately
+      throw error;
+    }
+  }
+  
+  throw lastError;
+}
+
 export async function optimizeTravelDates(input: OptimizeTravelDatesInput): Promise<OptimizeTravelDatesOutput> {
-  return optimizeTravelDatesFlow(input);
+  return retryWithBackoff(() => optimizeTravelDatesFlow(input));
 }
 
 const prompt = ai.definePrompt({
@@ -134,11 +178,6 @@ const prompt = ai.definePrompt({
   - If the initial choices are not optimal, suggest alternative dates or destinations and explain your reasoning.
   - Provide a list of recommended places to visit.
   - Find the cheapest flight option from the source to the destination and provide its details.
-  - If available, provide details for direct trains from the source to the destination.
-  - Recommend 2-3 accommodations based on a balance of high ratings and a nominal price, considering the user's stay options.
-  - List famous local food spots with their details, keeping in mind the user's food and dining preferences.
-  - Suggest activities and attractions, including their estimated prices, tailored to the trip type and user interests.
-  - Detail the available local transportation options.
   - Create a detailed day-by-day itinerary for the trip. Each day should have a title and a list of activities with times and descriptions, tailored to the traveler's preferences for trip type, activity level, cultural immersion, and nightlife.
   - Calculate an overall estimated total cost per person for the trip, staying within the provided budget range.
   - ALL monetary values MUST be in the user's specified currency: {{{currency}}}.
@@ -180,7 +219,76 @@ const optimizeTravelDatesFlow = ai.defineFlow(
     outputSchema: OptimizeTravelDatesOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    // Validate API key
+    if (!process.env.GOOGLE_API_KEY) {
+      throw new Error('GOOGLE_API_KEY is not defined in environment variables');
+    }
+
+    const { output } = await prompt(input);
+    
+    try {
+      const geocodeResult = await googleMapsClient.geocode({
+        params: {
+          address: input.destination,
+          key: process.env.GOOGLE_API_KEY,
+        }
+      });
+
+      if (geocodeResult.data.status !== 'OK' || geocodeResult.data.results.length === 0) {
+        throw new Error(`Could not geocode destination: ${input.destination}. Status: ${geocodeResult.data.status}`);
+      }
+
+      const { lat, lng } = geocodeResult.data.results[0].geometry.location;
+
+
+
+
+      const trainDirections = await googleMapsClient.directions({
+          params: {
+              origin: input.source,
+              destination: input.destination,
+              mode: TravelMode.transit,
+              transit_mode: [ TransitMode.train],
+              // transit_routing_preference: TransitRoutingPreference.fewer_transfers,
+              // alternatives: true,
+              key: process.env.GOOGLE_API_KEY,
+          },
+      });
+
+      // console.log('Train Directions Response:', JSON.stringify(trainDirections.data, null, 2));
+      // console.log('Number of routes found:', trainDirections.data.routes.length);
+
+      const recommendedAccommodations = await getTopAccommodations( lat, lng, 3);
+
+      const famousFoodSpots = await getTopRestaurants( lat, lng, 5);
+
+      // Enrich the itinerary with Google Maps data
+      const enrichedItinerary = await enrichItinerary(output!.itinerary, input.destination);
+
+
+
+      const directTrains = trainDirections.data.routes.slice(0, 4).map(route => (
+        {
+          trainName: route.legs[0].steps[0].transit_details.line.agencies[0].name || 'N/A',
+          departureStation: route.legs[0].start_address.split(',')[0],
+          arrivalStation: route.legs[0].end_address.split(',')[0],
+          price: route.fare?.currency || 'N/A',
+          fareValue: route.fare?.value || 0,
+          duration: route.legs[0].duration?.text || 'N/A',
+          details: route.summary,
+      }));
+
+      return {
+          ...output!,
+          itinerary: enrichedItinerary,
+          recommendedAccommodations,
+          famousFoodSpots,
+          // localTransportation,
+          directTrains,
+      };
+    } catch (error: any) {
+      console.error('Google Maps API Error:', error.response?.data || error.message);
+      throw new Error(`Google Maps API request failed: ${error.response?.data?.error_message || error.message}`);
+    }
   }
 );

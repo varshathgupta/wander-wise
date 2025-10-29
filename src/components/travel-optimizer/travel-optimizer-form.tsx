@@ -6,9 +6,12 @@ import { useState, useRef } from "react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { optimizeTravel } from "@/app/actions";
+import { useTravelStore, useIsLoading } from "@/store/travel-store";
+import { useRouter } from "next/navigation";
 
 import { Form } from "@/components/ui/form";
 import { PersonalizationToggle } from "./level2-form/personalization-toggle";
+import { TravelLoader } from "@/components/travel-loader";
 
 import { FormHeader } from "./form-header";
 import { Level1Form } from "./level1-form";
@@ -24,17 +27,26 @@ import {
 } from "./form-schema";
 
 export function TravelOptimizerForm({ 
-  setOptimizationResult, 
-  setIsLoading, 
-  onFormSubmit, 
   isMinimized = false, 
   onToggleMinimize, 
   hasResults = false 
 }: TravelOptimizerFormProps) {
+  const router = useRouter();
   const { toast } = useToast();
   const [currentLevel, setCurrentLevel] = useState(1);
   // Track whether user explicitly chose to optimize early (Level 2 submit click)
   const userInitiatedSubmitRef = useRef(false);
+  
+  // Use Zustand store instead of local state
+  const { 
+    setOptimizationResult, 
+    setLoading, 
+    setError,
+    setTripMetadata,
+    setLastFormData 
+  } = useTravelStore();
+  
+  const isLoading = useIsLoading();
 
   const form = useForm<TravelFormValues>({
     resolver: zodResolver(formSchema),
@@ -114,9 +126,10 @@ export function TravelOptimizerForm({
     }
     // Reset the intent immediately to avoid duplicate submissions (e.g., double Enter)
     userInitiatedSubmitRef.current = false;
-    setIsLoading(true);
+    setLoading(true);
     setOptimizationResult(null);
-    onFormSubmit({ source: values.from, destination: values.to });
+    setTripMetadata(values.from, values.to);
+    setLastFormData(values);
 
     try {
       const result = await optimizeTravel({
@@ -155,6 +168,9 @@ export function TravelOptimizerForm({
       }
       
       setOptimizationResult(result.data);
+      
+      // Redirect to suggestions page after successful optimization
+      router.push("/suggestions");
 
     } catch (error) {
       toast({
@@ -164,16 +180,20 @@ export function TravelOptimizerForm({
       });
       setOptimizationResult(null);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className={`transition-all duration-300 ${isMinimized ? 'h-20 overflow-hidden' : 'h-auto'}`}>
-      <Form {...form}>
-        {/* Form Header with Progress */}
-        <FormHeader 
-          currentLevel={currentLevel}
+    <>
+      {/* Show loader during API fetch */}
+      {isLoading && <TravelLoader />}
+      
+      <div className={`transition-all duration-300 ${isMinimized ? 'h-20 overflow-hidden' : 'h-auto'}`}>
+        <Form {...form}>
+          {/* Form Header with Progress */}
+          <FormHeader 
+            currentLevel={currentLevel}
           isMinimized={isMinimized}
           hasResults={hasResults}
           onToggleMinimize={onToggleMinimize}
@@ -252,10 +272,11 @@ export function TravelOptimizerForm({
             {/* Hidden submit button click handler enhancer */}
             <div className="hidden">
               {/* Intercept capture phase on submit button click to mark user intent */}
-            </div>
+                        </div>
           </form>
         )}
       </Form>
-    </div>
+      </div>
+    </>
   );
 }
