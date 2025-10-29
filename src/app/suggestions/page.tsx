@@ -152,7 +152,8 @@ export default function SuggestionsPage() {
                         <p className="text-xs text-muted-foreground mt-1">{optimizationResult.cheapestFlight.details}</p>
                       </div>
                       <p className="font-bold text-sm text-primary ml-2">
-                        {currencySymbol}{optimizationResult.cheapestFlight.price.toLocaleString()}
+                        {currencySymbol}{(Number(optimizationResult.cheapestFlight.price) * 2).toLocaleString()}
+
                       </p>
                     </div>
                   </div>
@@ -167,12 +168,12 @@ export default function SuggestionsPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 font-headline text-primary text-base">
                   <Train className="h-4 w-4" />
-                  Trains
+                  Trains & Bus
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0 space-y-2">
                 {optimizationResult.directTrains && optimizationResult.directTrains.length > 0 ? (
-                  optimizationResult.directTrains.slice(0, 2).map((train, index) => (
+                  optimizationResult.directTrains.slice(0, 3).map((train, index) => (
                     <div key={index}>
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
@@ -185,7 +186,7 @@ export default function SuggestionsPage() {
                           {currencySymbol}{train.price.toLocaleString()}
                         </p>
                       </div>
-                      {index < Math.min(optimizationResult.directTrains?.length ?? 0, 2) - 1 && (
+                      {index < Math.min(optimizationResult.directTrains?.length ?? 0, 3) - 1 && (
                         <Separator className="my-2" />
                       )}
                     </div>
@@ -193,25 +194,25 @@ export default function SuggestionsPage() {
                 ) : (
                   <p className="text-xs text-muted-foreground">No train options available</p>
                 )}
-                {optimizationResult.directTrains && optimizationResult.directTrains.length > 2 && (
+                {optimizationResult.directTrains && optimizationResult.directTrains.length > 3 && (
                   <p className="text-xs text-primary font-medium mt-2">
-                    +{optimizationResult.directTrains.length - 2} more options
+                    +{optimizationResult.directTrains.length - 3} more options
                   </p>
                 )}
               </CardContent>
             </Card>
 
-            {/* Bus / Local Transportation */}
+            {/*  Local Transportation */}
             <Card className="shadow-md bg-white">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 font-headline text-primary text-base">
                   <Bus className="h-4 w-4" />
-                  Bus & Local Transit
+                  Local Transit
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0 space-y-2">
                 {optimizationResult.localTransportation && optimizationResult.localTransportation.length > 0 ? (
-                  optimizationResult.localTransportation.slice(0, 2).map((transport, index) => (
+                  optimizationResult.localTransportation.slice(0, 3).map((transport, index) => (
                     <div key={index}>
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
@@ -222,7 +223,7 @@ export default function SuggestionsPage() {
                           {currencySymbol} {transport.estimatedCost}
                         </p>
                       </div>
-                      {index < Math.min(optimizationResult.localTransportation?.length ?? 0, 2) - 1 && (
+                      {index < Math.min(optimizationResult.localTransportation?.length ?? 0, 3) - 1 && (
                         <Separator className="my-2" />
                       )}
                     </div>
@@ -230,9 +231,9 @@ export default function SuggestionsPage() {
                 ) : (
                   <p className="text-xs text-muted-foreground">Local transportation info coming soon</p>
                 )}
-                {optimizationResult.localTransportation && optimizationResult.localTransportation.length > 2 && (
+                {optimizationResult.localTransportation && optimizationResult.localTransportation.length > 3 && (
                   <p className="text-xs text-primary font-medium mt-2">
-                    +{optimizationResult.localTransportation.length - 2} more options
+                    +{optimizationResult.localTransportation.length - 3} more options
                   </p>
                 )}
               </CardContent>
@@ -288,7 +289,7 @@ export default function SuggestionsPage() {
                 {optimizationResult.recommendedAccommodations && optimizationResult.recommendedAccommodations.length > 0 ? (
                   optimizationResult.recommendedAccommodations.slice(0, 3).map((hotel, index) => (
                     <div key={index}>
-                      <div className="space-y-1">
+                      <div className="flex justify-between space-y-1">
                         <div className="flex justify-between items-start gap-2">
                           <div className="flex-1 min-w-0">
                             <h3 className="font-bold text-sm truncate">{hotel.name}</h3>
@@ -299,12 +300,6 @@ export default function SuggestionsPage() {
                                 <span className="font-semibold">{hotel.rating.toFixed(1)}</span>
                               </div>
                             </div>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <p className="font-bold text-sm text-primary whitespace-nowrap">
-                              {currencySymbol}{hotel.pricePerNight.toLocaleString()}
-                            </p>
-                            <p className="text-xs text-muted-foreground">/ night</p>
                           </div>
                         </div>
                         <Link 
@@ -345,23 +340,14 @@ export default function SuggestionsPage() {
                     <div key={index}>
                       <div className="flex items-start gap-2">
                         <UtensilsCrossed className="h-3 w-3 text-primary mt-1 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start gap-2">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-sm">{spot.name}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <Badge variant="outline" className="text-xs">{spot.type || spot.cuisine}</Badge>
-                                {spot.rating && spot.rating > 0 && (
-                                  <div className="flex items-center gap-1 text-xs text-amber-500">
-                                    <Star className="h-3 w-3 fill-current" />
-                                    <span className="font-semibold">{spot.rating.toFixed(1)}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            {spot.location && (
-                              <div className="text-right flex-shrink-0">
-                                <p className="text-xs text-muted-foreground">{spot.location}</p>
+                        <div className="flex justify-between flex-1 min-w-0">
+                          <p className="font-semibold text-sm">{spot.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs">{spot.type || spot.cuisine}</Badge>
+                            {spot.rating && spot.rating > 0 && (
+                              <div className="flex items-center gap-1 text-xs text-amber-500">
+                                <Star className="h-3 w-3 fill-current" />
+                                <span className="font-semibold">{spot.rating.toFixed(1)}</span>
                               </div>
                             )}
                           </div>
