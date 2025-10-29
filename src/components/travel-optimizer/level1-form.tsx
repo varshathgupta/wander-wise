@@ -6,6 +6,7 @@ import { type DateRange } from "react-day-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -63,7 +64,11 @@ export function Level1Form({
               <FormItem>
                 <FormLabel>From *</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Chennai" value={field.value as string} onChange={field.onChange} />
+                  <AutocompleteInput 
+                    placeholder="e.g., Chennai" 
+                    value={field.value as string} 
+                    onChange={field.onChange}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -76,7 +81,11 @@ export function Level1Form({
               <FormItem>
                 <FormLabel>To *</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Kashmir" value={field.value as string} onChange={field.onChange} />
+                  <AutocompleteInput 
+                    placeholder="e.g., Kashmir" 
+                    value={field.value as string} 
+                    onChange={field.onChange}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
