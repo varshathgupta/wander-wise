@@ -7,6 +7,15 @@ import { adminDb } from "@/lib/firebase-admin";
 
 export async function optimizeTravel(input: any): Promise<{ data: OptimizeTravelDatesOutput | null, error: string | null }> {
   try {
+    // Require authentication to use the optimization feature
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return { 
+        data: null, 
+        error: "You must be signed in to use the travel optimization feature. Please sign in and try again." 
+      };
+    }
+
     const travelerDetails = JSON.parse(input.travelerDetails);
 
     const flatInput = {
@@ -22,9 +31,8 @@ export async function optimizeTravel(input: any): Promise<{ data: OptimizeTravel
 
     const result = await optimizeTravelDates(flatInput);
     
-    // Save search and itinerary if user is authenticated
-    const session = await getServerSession(authOptions);
-    if (session?.user?.id && result) {
+    // Save search and itinerary
+    if (result) {
       try {
         // Save the search
         const searchRef = await adminDb.collection('searches').add({
