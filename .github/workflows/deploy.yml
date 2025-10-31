@@ -23,6 +23,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
       - name: Setup Firebase CLI Credentials
         run: |
           # Write service account to file
@@ -30,6 +33,9 @@ jobs:
           
           # Set Google Application Credentials
           export GOOGLE_APPLICATION_CREDENTIALS="$HOME/gcloud-service-key.json"
+          
+          # Authenticate gcloud
+          gcloud auth activate-service-account --key-file=$HOME/gcloud-service-key.json
 
       - name: Deploy to Firebase App Hosting
         run: |
@@ -39,8 +45,11 @@ jobs:
           # Set credentials and deploy
           export GOOGLE_APPLICATION_CREDENTIALS="$HOME/gcloud-service-key.json"
           
-          # Deploy to App Hosting backend
-          firebase apphosting:rollouts:create projects/wander-wise-api/locations/asia-southeast1/backends/wander-wise-backend
+          # Deploy to App Hosting backend using gcloud (more reliable)
+          gcloud config set project wander-wise-api
+          gcloud firebase apphosting rollouts create \
+            --location=asia-southeast1 \
+            --backend=wander-wise-backend
         env:
           # Google APIs
           GOOGLE_GENAI_API_KEY: ${{ secrets.GOOGLE_GENAI_API_KEY }}
