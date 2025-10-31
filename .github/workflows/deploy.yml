@@ -37,8 +37,7 @@ jobs:
           npm install -g firebase-tools
           
           # Deploy to App Hosting backend
-          firebase apphosting:rollouts:create asia-southeast1/wander-wise-backend \
-            --project wander-wise-api
+          firebase apphosting:rollouts:create projects/wander-wise-api/locations/asia-southeast1/backends/wander-wise-backend
         env:
           # Google APIs
           GOOGLE_GENAI_API_KEY: ${{ secrets.GOOGLE_GENAI_API_KEY }}
