@@ -23,18 +23,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+      - name: Setup Firebase CLI Credentials
+        run: |
+          # Write service account to file
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > $HOME/gcloud-service-key.json
+          
+          # Set Google Application Credentials
+          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/gcloud-service-key.json"
 
       - name: Deploy to Firebase App Hosting
         run: |
           # Install Firebase CLI
           npm install -g firebase-tools
+          
+          # Set credentials and deploy
+          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/gcloud-service-key.json"
           
           # Deploy to App Hosting backend
           firebase apphosting:rollouts:create projects/wander-wise-api/locations/asia-southeast1/backends/wander-wise-backend
