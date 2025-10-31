@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { optimizeTravel } from "@/app/actions";
 import { useTravelStore, useIsLoading } from "@/store/travel-store";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 import { Form } from "@/components/ui/form";
 import { PersonalizationToggle } from "./level2-form/personalization-toggle";
@@ -33,6 +34,7 @@ export function TravelOptimizerForm({
 }: TravelOptimizerFormProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { data: session } = useSession();
   const [currentLevel, setCurrentLevel] = useState(1);
   // Track whether user explicitly chose to optimize early (Level 2 submit click)
   const userInitiatedSubmitRef = useRef(false);
@@ -80,6 +82,16 @@ export function TravelOptimizerForm({
     
     if (currentLevel === 1) {
       isValid = await form.trigger(['from', 'to', 'dateRange', 'place', 'tripType', 'budgetRange', 'currency']);
+      
+      // Check if user is authenticated before allowing progression from Level 1
+      if (isValid && !session) {
+        toast({
+          variant: "destructive",
+          title: "Sign in required",
+          description: "Please sign in to continue planning your trip.",
+        });
+        return;
+      }
     } else {
       isValid = true; // Level 2 and 3 are optional
     }

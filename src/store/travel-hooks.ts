@@ -1,6 +1,9 @@
 import { useMemo } from 'react';
-import { useTravelStore } from './travel-store';
+import { useTravelStore as useStore } from './travel-store';
 import type { OptimizeTravelDatesOutput } from '@/ai/flows/optimize-travel-dates';
+
+// Re-export the store hook
+export { useTravelStore } from './travel-store';
 
 /**
  * Custom hooks for common store operations
@@ -10,16 +13,16 @@ import type { OptimizeTravelDatesOutput } from '@/ai/flows/optimize-travel-dates
  * Hook to check if trip results are available
  */
 export const useHasResults = () => {
-  return useTravelStore((state) => state.optimizationResult !== null);
+  return useStore((state) => state.optimizationResult !== null);
 };
 
 /**
  * Hook to get formatted trip summary
  */
 export const useTripSummary = () => {
-  const result = useTravelStore((state) => state.optimizationResult);
-  const source = useTravelStore((state) => state.source);
-  const destination = useTravelStore((state) => state.destination);
+  const result = useStore((state) => state.optimizationResult);
+  const source = useStore((state) => state.source);
+  const destination = useStore((state) => state.destination);
 
   if (!result) return null;
 
@@ -38,7 +41,7 @@ export const useTripSummary = () => {
  * Hook to get all transportation options
  */
 export const useTransportation = () => {
-  const result = useTravelStore((state) => state.optimizationResult);
+  const result = useStore((state) => state.optimizationResult);
   
   return useMemo(() => {
     if (!result) return null;
@@ -55,7 +58,7 @@ export const useTransportation = () => {
  * Hook to get all accommodation and food information
  */
 export const useAccommodationAndFood = () => {
-  const result = useTravelStore((state) => state.optimizationResult);
+  const result = useStore((state) => state.optimizationResult);
   
   return useMemo(() => {
     if (!result) return null;
@@ -71,7 +74,7 @@ export const useAccommodationAndFood = () => {
  * Hook to get activities and itinerary
  */
 export const useActivitiesAndItinerary = () => {
-  const result = useTravelStore((state) => state.optimizationResult);
+  const result = useStore((state) => state.optimizationResult);
   
   return useMemo(() => {
     if (!result) return null;
@@ -87,14 +90,14 @@ export const useActivitiesAndItinerary = () => {
  * Hook to manage optimization workflow
  */
 export const useOptimizationWorkflow = () => {
-  const setLoading = useTravelStore((state) => state.setLoading);
-  const setError = useTravelStore((state) => state.setError);
-  const setOptimizationResult = useTravelStore((state) => state.setOptimizationResult);
-  const setTripMetadata = useTravelStore((state) => state.setTripMetadata);
-  const setLastFormData = useTravelStore((state) => state.setLastFormData);
-  const resetStore = useTravelStore((state) => state.resetStore);
-  const isLoading = useTravelStore((state) => state.isLoading);
-  const error = useTravelStore((state) => state.error);
+  const setLoading = useStore((state) => state.setLoading);
+  const setError = useStore((state) => state.setError);
+  const setOptimizationResult = useStore((state) => state.setOptimizationResult);
+  const setTripMetadata = useStore((state) => state.setTripMetadata);
+  const setLastFormData = useStore((state) => state.setLastFormData);
+  const resetStore = useStore((state) => state.resetStore);
+  const isLoading = useStore((state) => state.isLoading);
+  const error = useStore((state) => state.error);
 
   const startOptimization = useMemo(
     () => (source: string, destination: string, formData: any) => {
@@ -149,7 +152,7 @@ export const useOptimizationWorkflow = () => {
  * Hook to filter accommodations by price range
  */
 export const useFilteredAccommodations = (maxPrice?: number) => {
-  const accommodations = useTravelStore((state) => state.getAccommodations());
+  const accommodations = useStore((state) => state.getAccommodations());
   
   return useMemo(() => {
     if (!accommodations) return [];
@@ -164,7 +167,7 @@ export const useFilteredAccommodations = (maxPrice?: number) => {
  * Hook to filter food spots by cuisine type
  */
 export const useFilteredFoodSpots = (cuisineType?: string) => {
-  const foodSpots = useTravelStore((state) => state.getFoodSpots());
+  const foodSpots = useStore((state) => state.getFoodSpots());
   
   return useMemo(() => {
     if (!foodSpots) return [];
@@ -172,7 +175,7 @@ export const useFilteredFoodSpots = (cuisineType?: string) => {
     if (!cuisineType) return foodSpots;
     
     return foodSpots.filter((spot) => 
-      spot.cuisine.toLowerCase().includes(cuisineType.toLowerCase())
+      spot.cuisine?.toLowerCase().includes(cuisineType.toLowerCase())
     );
   }, [foodSpots, cuisineType]);
 };
@@ -181,7 +184,7 @@ export const useFilteredFoodSpots = (cuisineType?: string) => {
  * Hook to get trip duration in days
  */
 export const useTripDuration = () => {
-  const itinerary = useTravelStore((state) => state.getItinerary());
+  const itinerary = useStore((state) => state.getItinerary());
   
   if (!itinerary) return 0;
   
@@ -192,7 +195,7 @@ export const useTripDuration = () => {
  * Hook to calculate total accommodation cost estimate
  */
 export const useTotalAccommodationCost = () => {
-  const accommodations = useTravelStore((state) => state.getAccommodations());
+  const accommodations = useStore((state) => state.getAccommodations());
   const tripDuration = useTripDuration();
   
   if (!accommodations || accommodations.length === 0 || tripDuration === 0) return 0;
@@ -206,7 +209,7 @@ export const useTotalAccommodationCost = () => {
  * Hook to get trip cost breakdown
  */
 export const useCostBreakdown = () => {
-  const result = useTravelStore((state) => state.optimizationResult);
+  const result = useStore((state) => state.optimizationResult);
   const accommodationCost = useTotalAccommodationCost();
   
   return useMemo(() => {
