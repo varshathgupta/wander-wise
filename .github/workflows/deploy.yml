@@ -37,8 +37,7 @@ jobs:
           npm install -g firebase-tools
           
           # Deploy to App Hosting backend
-          firebase apphosting:backends:rollout wander-wise-backend \
-            --location asia-southeast1 \
+          firebase apphosting:rollouts:create asia-southeast1/wander-wise-backend \
             --project wander-wise-api
         env:
           # Google APIs
