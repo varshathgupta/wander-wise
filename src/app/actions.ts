@@ -2,13 +2,13 @@
 
 import { optimizeTravelDates, type OptimizeTravelDatesOutput } from "@/ai/flows/optimize-travel-dates";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { adminDb } from "@/lib/firebase-admin";
+import { getAuthOptions } from "@/lib/auth";
+import { getAdminDb } from "@/lib/firebase-admin";
 
 export async function optimizeTravel(input: any): Promise<{ data: OptimizeTravelDatesOutput | null, error: string | null }> {
   try {
     // Require authentication to use the optimization feature
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(getAuthOptions());
     if (!session?.user?.id) {
       return { 
         data: null, 
@@ -34,6 +34,8 @@ export async function optimizeTravel(input: any): Promise<{ data: OptimizeTravel
     // Save search and itinerary
     if (result) {
       try {
+        const adminDb = getAdminDb();
+        
         // Save the search
         const searchRef = await adminDb.collection('searches').add({
           userId: session.user.id,
@@ -88,13 +90,14 @@ export async function optimizeTravel(input: any): Promise<{ data: OptimizeTravel
  * Get user's past searches
  */
 export async function getUserSearches() {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(getAuthOptions());
   
   if (!session?.user?.id) {
     throw new Error('Unauthorized');
   }
 
   try {
+    const adminDb = getAdminDb();
     const snapshot = await adminDb
       .collection('searches')
       .where('userId', '==', session.user.id)
@@ -102,7 +105,7 @@ export async function getUserSearches() {
       .limit(20)
       .get();
 
-    return snapshot.docs.map(doc => ({
+    return snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
       searchDate: doc.data().searchDate.toDate().toISOString(),
@@ -117,13 +120,14 @@ export async function getUserSearches() {
  * Get user's saved itineraries
  */
 export async function getUserItineraries() {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(getAuthOptions());
   
   if (!session?.user?.id) {
     throw new Error('Unauthorized');
   }
 
   try {
+    const adminDb = getAdminDb();
     const snapshot = await adminDb
       .collection('itineraries')
       .where('userId', '==', session.user.id)
@@ -131,7 +135,7 @@ export async function getUserItineraries() {
       .limit(20)
       .get();
 
-    return snapshot.docs.map(doc => ({
+    return snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt.toDate().toISOString(),
@@ -146,13 +150,14 @@ export async function getUserItineraries() {
  * Toggle itinerary favorite status
  */
 export async function toggleItineraryFavorite(itineraryId: string, isFavorite: boolean) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(getAuthOptions());
   
   if (!session?.user?.id) {
     throw new Error('Unauthorized');
   }
 
   try {
+    const adminDb = getAdminDb();
     const docRef = adminDb.collection('itineraries').doc(itineraryId);
     const doc = await docRef.get();
     
@@ -172,13 +177,14 @@ export async function toggleItineraryFavorite(itineraryId: string, isFavorite: b
  * Delete an itinerary
  */
 export async function deleteItineraryAction(itineraryId: string) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(getAuthOptions());
   
   if (!session?.user?.id) {
     throw new Error('Unauthorized');
   }
 
   try {
+    const adminDb = getAdminDb();
     const docRef = adminDb.collection('itineraries').doc(itineraryId);
     const doc = await docRef.get();
     
