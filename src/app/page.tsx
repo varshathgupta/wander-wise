@@ -3,6 +3,7 @@
 import { TravelOptimizerForm } from "@/components/travel-optimizer-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plane, Search } from "lucide-react";
+import { AuthButton } from "@/components/auth-button";
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
                 WanderWise
               </h1>
             </div>
+            <AuthButton />
           </div>
         </div>
       </header>
