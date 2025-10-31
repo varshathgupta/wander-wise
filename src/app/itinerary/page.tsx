@@ -24,10 +24,11 @@ import {
   Globe,
   Navigation,
   ArrowLeft,
-  Plane,
   DollarSign,
 } from "lucide-react";
 import type { EnrichedActivity } from "@/lib/enrich-itinerary";
+import { Header } from "@/components/header";
+import Link from "next/link";
 
 // Helper function to categorize activities by time of day
 function categorizeActivitiesByTime(activities: EnrichedActivity[]) {
@@ -212,18 +213,7 @@ export default function ItineraryPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <Plane className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold tracking-tight text-primary font-headline">
-                WanderWise
-              </h1>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Title Section */}

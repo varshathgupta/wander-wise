@@ -37,7 +37,7 @@ export function AuthButton() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10">
+          <Avatar className="h-10 w-10 border-2 border-primary/70 hover:border-primary/40 transition-colors">
             <AvatarImage src={session.user?.image || ''} alt={session.user?.name || ''} />
             <AvatarFallback>
               {session.user?.name?.charAt(0).toUpperCase() || 'U'}

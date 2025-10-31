@@ -15,9 +15,9 @@ import {
   toggleItineraryFavorite 
 } from '@/app/actions';
 import type { UserSearch, SavedItinerary } from '@/types/firestore';
-import { Plane, Calendar, MapPin, Heart, Trash2, Eye, AlertCircle } from 'lucide-react';
+import { Calendar, MapPin, Heart, Trash2, Eye, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
-import { AuthButton } from '@/components/auth-button';
+import { Header } from '@/components/header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTravelStore } from '@/store/travel-hooks';
 
@@ -63,7 +63,7 @@ export default function PastSearchesPage() {
     }
 
     loadData();
-  }, [session]);
+  }, [session?.user?.id]);
 
   const handleViewItinerary = (itinerary: SavedItinerary) => {
     const store = useTravelStore.getState();
@@ -99,19 +99,7 @@ export default function PastSearchesPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <Link href="/" className="flex items-center space-x-3">
-                <Plane className="h-8 w-8 text-primary" />
-                <h1 className="text-2xl font-bold tracking-tight text-primary font-headline">
-                  WanderWise
-                </h1>
-              </Link>
-              <AuthButton />
-            </div>
-          </div>
-        </header>
+        <Header />
         <main className="container mx-auto p-4 sm:p-6 lg:p-8">
           <div className="space-y-4">
             <Skeleton className="h-12 w-64" />
@@ -130,19 +118,7 @@ export default function PastSearchesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center space-x-3">
-              <Plane className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold tracking-tight text-primary font-headline">
-                WanderWise
-              </h1>
-            </Link>
-            <AuthButton />
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         <div className="mb-8">
@@ -160,7 +136,7 @@ export default function PastSearchesPage() {
         )}
 
         <Tabs defaultValue="itineraries" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-md grid-cols-2 justify-center">
             <TabsTrigger value="itineraries">Saved Itineraries</TabsTrigger>
             <TabsTrigger value="searches">Search History</TabsTrigger>
           </TabsList>
@@ -216,7 +192,7 @@ export default function PastSearchesPage() {
                         
                         {itinerary.optimizationResult.totalEstimatedCostPerPerson && (
                           <Badge variant="secondary">
-                            ${itinerary.optimizationResult.totalEstimatedCostPerPerson.toLocaleString()} / person
+                            &#x20b9; {itinerary.optimizationResult.totalEstimatedCostPerPerson.toLocaleString()} / person
                           </Badge>
                         )}
 
