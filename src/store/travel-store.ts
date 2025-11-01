@@ -132,7 +132,8 @@ export const useTravelStore = create<TravelState>()(
         },
         
         getCurrency: () => {
-          return get().optimizationResult?.currency || 'INR';
+          // Always return INR for India-specific travel
+          return 'INR';
         },
         
         getDirectTrains: () => {
@@ -183,19 +184,10 @@ export const useFoodSpots = () => useTravelStore((state) => state.getFoodSpots()
 export const useItinerary = () => useTravelStore((state) => state.getItinerary());
 export const useTotalCost = () => useTravelStore((state) => state.getTotalCost());
 
-// Currency symbol mapping
-const currencySymbols: { [key: string]: string } = {
-  USD: "$",
-  EUR: "€",
-  INR: "₹",
-};
-
+// Currency info for India (INR only)
 export const useCurrencyInfo = () => {
-  const currency = useTravelStore((state) => state.getCurrency());
-  const symbol = currencySymbols[currency] || '₹';
-  
   return {
-    currency,
-    symbol,
+    currency: 'INR',
+    symbol: '₹',
   };
 };

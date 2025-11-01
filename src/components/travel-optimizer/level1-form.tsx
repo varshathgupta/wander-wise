@@ -20,29 +20,28 @@ import { useFormContext } from "react-hook-form";
 
 export function Level1Form({ 
   control, 
-  currency = 'INR', 
   destination = '', 
   tripType = 'leisure' 
 }: LevelFormProps) {
   const { setValue, getValues } = useFormContext();
   
-  // Get dynamic budget ranges
-  const budgetRanges = getBudgetRanges(destination, tripType, currency);
+  // Get dynamic budget ranges (INR only for India)
+  const budgetRanges = getBudgetRanges(destination, tripType);
 
-  // Handle currency change and adjust budget range accordingly
+  // Handle trip type changes and adjust budget range accordingly
   useEffect(() => {
     const currentBudgetRange = getValues('budgetRange');
     if (currentBudgetRange && budgetRanges) {
-      // Check if current budget range is outside the new currency's range
+      // Check if current budget range is outside the new range
       const [currentMin, currentMax] = currentBudgetRange;
-      const { low, luxury } = budgetRanges;
+      const [rangeMin, rangeMax] = budgetRanges;
       
-      // If current values are outside the valid range, reset to medium range
-      if (currentMin < low[0] || currentMax > luxury[1] || currentMin > luxury[1] || currentMax < low[0]) {
-        setValue('budgetRange', budgetRanges.medium, { shouldValidate: true });
+      // If current values are outside the valid range, reset to the range
+      if (currentMin < rangeMin || currentMax > rangeMax || currentMin > rangeMax || currentMax < rangeMin) {
+        setValue('budgetRange', budgetRanges, { shouldValidate: true });
       }
     }
-  }, [currency, destination, tripType, budgetRanges, setValue, getValues]);
+  }, [destination, tripType, budgetRanges, setValue, getValues]);
 
   return (
     <Card>
@@ -156,7 +155,7 @@ export function Level1Form({
          
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
           <FormField
             control={control}
             name="tripType"
@@ -182,29 +181,6 @@ export function Level1Form({
               </FormItem>
             )}
           />
-
-          <FormField
-            control={control}
-            name="currency"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Currency</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="USD">USD ($)</SelectItem>
-                    <SelectItem value="EUR">EUR (€)</SelectItem>
-                    <SelectItem value="INR">INR (₹)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
 
         <FormField
@@ -212,31 +188,31 @@ export function Level1Form({
           name="budgetRange"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Budget Range ({currency})</FormLabel>
+              <FormLabel>Budget Range (INR)</FormLabel>
               <FormControl>
                 <div className="px-3">
                   <Slider
-                    min={budgetRanges.low[0]}
-                    max={budgetRanges.luxury[1]}
-                    step={currency === 'INR' ? 5000 : (currency === 'USD' ? 100 : 90)}
-                    value={field.value || budgetRanges.medium}
+                    min={budgetRanges[0]}
+                    max={budgetRanges[1]}
+                    step={5000}
+                    value={field.value || budgetRanges}
                     onValueChange={(value) => {
                       field.onChange(value);
                     }}
                     className="w-full"
                   />
                   <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                    <span>{currency} {(field.value?.[0] || budgetRanges.medium[0]).toLocaleString()}</span>
-                    <span>{currency} {(field.value?.[1] || budgetRanges.medium[1]).toLocaleString()}</span>
+                    <span>₹ {(field.value?.[0] || budgetRanges[0]).toLocaleString()}</span>
+                    <span>₹ {(field.value?.[1] || budgetRanges[1]).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>Min: {currency} {budgetRanges.low[0].toLocaleString()}</span>
-                    <span>Max: {currency} {budgetRanges.luxury[1].toLocaleString()}</span>
+                    <span>Min: ₹ {budgetRanges[0].toLocaleString()}</span>
+                    <span>Max: ₹ {budgetRanges[1].toLocaleString()}</span>
                   </div>
                 </div>
               </FormControl>
               <FormDescription>
-                Budget ranges are dynamically adjusted based on destination and trip type
+                Budget ranges are dynamically adjusted based on trip type
               </FormDescription>
               <FormMessage />
             </FormItem>

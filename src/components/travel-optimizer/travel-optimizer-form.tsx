@@ -57,8 +57,7 @@ export function TravelOptimizerForm({
       to: "",
       place: "",
       tripType: "leisure",
-      budgetRange: getDefaultBudgetRange('INR'),
-      currency: "INR",
+      budgetRange: getDefaultBudgetRange(),
       dateRange: undefined,
   easyBooking: false,
   standardPlans: true,
@@ -70,7 +69,6 @@ export function TravelOptimizerForm({
 
   const watchedValues = useWatch({ control: form.control });
   const tripType = watchedValues.tripType;
-  const currency = watchedValues.currency || 'INR';
   const destination = watchedValues.to || '';
   const isPersonalised = watchedValues.isPersonalised;
   const easyBookingValue = watchedValues.easyBooking;
@@ -81,7 +79,7 @@ export function TravelOptimizerForm({
     let isValid = false;
     
     if (currentLevel === 1) {
-      isValid = await form.trigger(['from', 'to', 'dateRange', 'place', 'tripType', 'budgetRange', 'currency']);
+      isValid = await form.trigger(['from', 'to', 'dateRange', 'place', 'tripType', 'budgetRange']);
       
       // Check if user is authenticated before allowing progression from Level 1
       if (isValid && !session) {
@@ -172,7 +170,6 @@ export function TravelOptimizerForm({
             nightlifeInterest: values.nightlifeInterest,
           } : null,
         }),
-        currency: values.currency,
       });
 
       if (result.error) {
@@ -239,7 +236,6 @@ export function TravelOptimizerForm({
               <Level1Form 
                 control={form.control}
                 tripType={tripType}
-                currency={currency}
                 destination={destination}
               />
             )}
