@@ -475,7 +475,7 @@ function ActivityCard({ activity }: { activity: EnrichedActivity }) {
 // Function to draw the Plane icon in the PDF
 function drawPlaneIcon(doc: jsPDF, x: number, y: number, size: number) {
   // Simple plane icon representation using lines
-  doc.setDrawColor(59, 130, 246); // Primary blue color
+  doc.setDrawColor(0, 164, 213); // EaseMyTrip Caribbean Blue #00A4D5
   doc.setLineWidth(0.5);
   
   // Draw plane body
@@ -517,9 +517,21 @@ function generatePDF(
   // Add brand logo and title
   drawPlaneIcon(doc, margin, yPosition, 8);
   doc.setFontSize(20);
-  doc.setTextColor(59, 130, 246); // Primary blue
+  doc.setTextColor(0, 91, 155); // EaseMyTrip Nice Blue #005B9B
   doc.setFont("helvetica", "bold");
   doc.text("WanderWise", margin + 12, yPosition + 5);
+  
+  // Add separator
+  doc.setFontSize(14);
+  doc.setTextColor(107, 114, 128); // Gray-500
+  doc.setFont("helvetica", "normal");
+  doc.text("×", margin + 60, yPosition + 5);
+  
+  // Add EaseMyTrip logo text
+  doc.setFontSize(16);
+  doc.setTextColor(0, 91, 155); // EaseMyTrip Nice Blue
+  doc.setFont("helvetica", "bold");
+  doc.text("EaseMyTrip", margin + 68, yPosition + 5);
   
   yPosition += 20;
 

@@ -22,6 +22,20 @@ export default {
         code: ['monospace'],
       },
       colors: {
+        // EaseMyTrip Brand Colors
+        'emt-blue': {
+          DEFAULT: '#005B9B', // Nice Blue - Primary
+          light: '#4E88CC',
+          dark: '#00326C',
+        },
+        'emt-caribbean': {
+          DEFAULT: '#00A4D5', // Caribbean Blue - Secondary
+          light: '#60D5FF',
+          dark: '#0075A3',
+        },
+        'emt-grey': {
+          DEFAULT: '#252220', // Ship Grey
+        },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {
