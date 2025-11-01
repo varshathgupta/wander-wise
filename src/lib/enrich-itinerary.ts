@@ -38,6 +38,67 @@ export interface EnrichedActivity {
   nearbyDining?: NearbyDining[];
   websiteUrl?: string;
   phoneNumber?: string;
+  tags?: string[];
+}
+
+/**
+ * Generate tags for an activity based on keywords and place type
+ */
+export function generateActivityTags(activity: string, description: string): string[] {
+  const tags: string[] = [];
+  const combined = `${activity} ${description}`.toLowerCase();
+  
+  // Heritage and Historical
+  if (combined.match(/\b(heritage|historical|ancient|monument|fort|palace|castle|temple|church|mosque|archaeological)\b/)) {
+    tags.push('Heritage Site');
+  }
+  
+  // Pilgrim sites
+  if (combined.match(/\b(temple|shrine|church|mosque|cathedral|holy|sacred|pilgrimage|religious)\b/)) {
+    tags.push('Pilgrim Site');
+  }
+  
+  // Natural wonders
+  if (combined.match(/\b(waterfall|lake|mountain|hill|beach|valley|canyon|forest|national park|wildlife|nature|scenic)\b/)) {
+    tags.push('Local Wonder');
+  }
+  
+  // Romantic/Couple spots
+  if (combined.match(/\b(romantic|sunset|sunrise|panoramic|viewpoint|garden|peaceful|serene|couples|honeymoon)\b/)) {
+    tags.push('Couple Spot');
+  }
+  
+  // Picturesque locations
+  if (combined.match(/\b(picturesque|scenic|beautiful|photography|instagram|photo|view|panoramic|vista)\b/)) {
+    tags.push('Picturesque');
+  }
+  
+  // Adventure activities
+  if (combined.match(/\b(adventure|trek|hiking|rafting|paragliding|safari|diving|snorkeling|skiing)\b/)) {
+    tags.push('Adventure');
+  }
+  
+  // Cultural experiences
+  if (combined.match(/\b(museum|art|culture|gallery|traditional|local market|handicraft|exhibition)\b/)) {
+    tags.push('Cultural');
+  }
+  
+  // Shopping
+  if (combined.match(/\b(market|shopping|mall|bazaar|souvenir|handicraft shop)\b/)) {
+    tags.push('Shopping');
+  }
+  
+  // Entertainment
+  if (combined.match(/\b(theme park|amusement|entertainment|show|performance|nightlife|club|bar)\b/)) {
+    tags.push('Entertainment');
+  }
+  
+  // Food & Dining
+  if (combined.match(/\b(restaurant|cafe|food|dining|cuisine|breakfast|lunch|dinner|street food)\b/)) {
+    tags.push('Food & Dining');
+  }
+  
+  return [...new Set(tags)]; // Remove duplicates
 }
 
 /**
@@ -188,15 +249,15 @@ async function getNearbyDining(
   }
 }
 
-/**
- * Enrich a single activity with Google Maps data
- */
 export async function enrichActivity(
   activity: { time: string; activity: string; description: string },
   destinationCity: string,
   previousLocation?: string
 ): Promise<EnrichedActivity> {
   const enriched: EnrichedActivity = { ...activity };
+
+  // Generate tags for the activity
+  enriched.tags = generateActivityTags(activity.activity, activity.description);
 
   // Skip enrichment for generic activities like "Hotel Check-in", "Dinner", "Relaxation", "Departure"
   const skipKeywords = ['check-in', 'check out', 'checkout', 'dinner at', 'lunch at', 'relaxation', 'departure', 'arrival at', 'breakfast'];
@@ -224,16 +285,48 @@ export async function enrichActivity(
       enriched.phoneNumber = placeDetails.phoneNumber;
       enriched.openingHours = placeDetails.openingHours;
 
-      // Try to determine entry fee from price level
-      if (placeDetails.priceLevel) {
-        const priceMap: Record<string, string> = {
+      // Map price level from Google Places API
+      // API can return either string enum or number (0-4)
+      if (placeDetails.priceLevel !== undefined && 
+          placeDetails.priceLevel !== null && 
+          placeDetails.priceLevel !== 'PRICE_LEVEL_UNSPECIFIED') {
+        const stringPriceMap: Record<string, string> = {
           'PRICE_LEVEL_FREE': 'Free',
-          'PRICE_LEVEL_INEXPENSIVE': '₹0-500',
-          'PRICE_LEVEL_MODERATE': '₹500-1500',
-          'PRICE_LEVEL_EXPENSIVE': '₹1500-3000',
-          'PRICE_LEVEL_VERY_EXPENSIVE': '₹3000+',
+          'PRICE_LEVEL_INEXPENSIVE': 'Affordable',
+          'PRICE_LEVEL_MODERATE': 'Moderate',
+          'PRICE_LEVEL_EXPENSIVE': 'Expensive',
+          'PRICE_LEVEL_VERY_EXPENSIVE': 'Very Expensive',
         };
-        enriched.entryFee = priceMap[placeDetails.priceLevel] || 'Contact venue for pricing';
+        
+        const numericPriceMap: Record<number, string> = {
+          0: 'Free',
+          1: 'Affordable',
+          2: 'Moderate',
+          3: 'Expensive',
+          4: 'Very Expensive',
+        };
+        
+        // Handle both string and numeric price levels
+        if (typeof placeDetails.priceLevel === 'string') {
+          const mappedPrice = stringPriceMap[placeDetails.priceLevel];
+          if (mappedPrice) {
+            enriched.entryFee = mappedPrice;
+            console.log(`Price level for ${activity.activity}: ${placeDetails.priceLevel} -> ${enriched.entryFee}`);
+          } else {
+            console.log(`Unknown price level string for ${activity.activity}: ${placeDetails.priceLevel}`);
+          }
+        } else if (typeof placeDetails.priceLevel === 'number') {
+          const mappedPrice = numericPriceMap[placeDetails.priceLevel];
+          if (mappedPrice) {
+            enriched.entryFee = mappedPrice;
+            console.log(`Price level for ${activity.activity}: ${placeDetails.priceLevel} -> ${enriched.entryFee}`);
+          } else {
+            console.log(`Unknown price level number for ${activity.activity}: ${placeDetails.priceLevel}`);
+          }
+        }
+      } else {
+        // No price level data available or unspecified, don't show any price
+        console.log(`No price level data for ${activity.activity}${placeDetails.priceLevel === 'PRICE_LEVEL_UNSPECIFIED' ? ' (UNSPECIFIED)' : ''}`);
       }
 
       // Get directions from previous location if available

@@ -54,14 +54,14 @@ export default function SuggestionsPage() {
 
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Title and Amount Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold font-headline text-gray-800 mb-1">
+            <h1 className="text-2xl sm:text-3xl font-bold font-headline text-gray-800 mb-1">
               {source} to {destination}
             </h1>
             <p className="text-sm text-muted-foreground">Your personalized travel suggestions</p>
           </div>
-          <Card className="shadow-md bg-primary text-primary-foreground p-4 rounded-lg mt-3 sm:mt-0">
+          <Card className="shadow-md bg-primary text-primary-foreground p-4 rounded-lg flex-shrink-0">
             <div className="text-center">
               <p className="text-xs mb-1">Estimated Cost</p>
               <p className="text-2xl font-bold">
@@ -123,7 +123,7 @@ export default function SuggestionsPage() {
             Transportation Options
           </h2>
           
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Flight */}
             <Card className="shadow-md bg-white">
               <CardHeader className="pb-3">
@@ -265,7 +265,7 @@ export default function SuggestionsPage() {
             Where to Stay & Eat
           </h2>
           
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Accommodations */}
             <Card className="shadow-md bg-white">
               <CardHeader className="pb-3">
@@ -278,11 +278,11 @@ export default function SuggestionsPage() {
                 {optimizationResult.recommendedAccommodations && optimizationResult.recommendedAccommodations.length > 0 ? (
                   optimizationResult.recommendedAccommodations.slice(0, 3).map((hotel, index) => (
                     <div key={index}>
-                      <div className="flex justify-between space-y-1">
-                        <div className="flex justify-between items-start gap-2">
+                      <div className="space-y-2">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-sm truncate">{hotel.name}</h3>
-                            <div className="flex items-center gap-2 mt-1">
+                            <h3 className="font-bold text-sm break-words">{hotel.name}</h3>
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
                               <Badge variant="secondary" className="text-xs">{hotel.type}</Badge>
                               <div className="flex items-center gap-1 text-xs text-amber-500">
                                 <Star className="h-3 w-3 fill-current" />
@@ -290,14 +290,14 @@ export default function SuggestionsPage() {
                               </div>
                             </div>
                           </div>
+                          <Link 
+                            href={hotel.bookingLink} 
+                            target="_blank" 
+                            className="text-xs text-blue-500 hover:underline inline-flex items-center gap-1 whitespace-nowrap flex-shrink-0"
+                          >
+                            Book Now <ExternalLink className="h-3 w-3" />
+                          </Link>
                         </div>
-                        <Link 
-                          href={hotel.bookingLink} 
-                          target="_blank" 
-                          className="text-xs text-blue-500 hover:underline inline-flex items-center gap-1"
-                        >
-                          Book Now <ExternalLink className="h-2 w-2" />
-                        </Link>
                       </div>
                       {index < Math.min(optimizationResult.recommendedAccommodations?.length ?? 0, 3) - 1 && (
                         <Separator className="my-3" />
@@ -323,15 +323,15 @@ export default function SuggestionsPage() {
                   Famous Food Spots
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-0 space-y-2">
+              <CardContent className="pt-0 space-y-3">
                 {optimizationResult.famousFoodSpots && optimizationResult.famousFoodSpots.length > 0 ? (
                   optimizationResult.famousFoodSpots.slice(0, 5).map((spot, index) => (
                     <div key={index}>
-                      <div className="flex items-start gap-2">
-                        <UtensilsCrossed className="h-3 w-3 text-primary mt-1 flex-shrink-0" />
-                        <div className="flex justify-between flex-1 min-w-0">
-                          <p className="font-semibold text-sm">{spot.name}</p>
-                          <div className="flex items-center gap-2 mt-1">
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+                        <UtensilsCrossed className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <p className="font-semibold text-sm break-words">{spot.name}</p>
+                          <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="outline" className="text-xs">{spot.type || spot.cuisine}</Badge>
                             {spot.rating && spot.rating > 0 && (
                               <div className="flex items-center gap-1 text-xs text-amber-500">
@@ -343,7 +343,7 @@ export default function SuggestionsPage() {
                         </div>
                       </div>
                       {index < Math.min(optimizationResult.famousFoodSpots?.length ?? 0, 5) - 1 && (
-                        <Separator className="my-2" />
+                        <Separator className="my-3" />
                       )}
                     </div>
                   ))

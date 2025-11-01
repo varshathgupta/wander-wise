@@ -22,8 +22,7 @@ const OptimizeTravelDatesInputSchema = z.object({
   startDate: z.string().describe('The desired start date for the trip (YYYY-MM-DD).'),
   endDate: z.string().describe('The desired end date for the trip (YYYY-MM-DD).'),
   tripType: z.enum(['adventure', 'honeymoon', 'leisure', 'luxury', 'pilgrim', 'others']).describe('The type of trip.'),
-  budgetRange: z.array(z.number()).length(2).describe('The budget range for the trip.'),
-  currency: z.enum(['USD', 'EUR', 'INR']).describe('The currency for the expense estimation.'),
+  budgetRange: z.array(z.number()).length(2).describe('The budget range for the trip in INR (Indian Rupees).'),
   
   // Level 2: Trip Character
   easyBooking: z.boolean().optional().describe('Preference for easy booking options.'),
@@ -124,8 +123,8 @@ const OptimizeTravelDatesOutputSchema = z.object({
   alternativeDestinations: z.string().describe('Suggested alternative travel destinations only if applicable.'),
   reasoning: z.string().describe('Reasoning for the date and/or destination changes.'),
   placesToVisit: z.array(z.string()).describe('A list of 3-5 recommended places to visit at the destination.'),
-  totalEstimatedCostPerPerson: z.number().describe('The overall estimated total expense per person for the entire trip.'),
-  currency: z.enum(['USD', 'EUR', 'INR']).describe('The currency used for all cost estimations.'),
+  totalEstimatedCostPerPerson: z.number().describe('The overall estimated total expense per person for the entire trip in INR (Indian Rupees).'),
+  currency: z.literal('INR').describe('The currency used for all cost estimations (always INR for India).'),
   cheapestFlight: FlightDetailsSchema.describe('Details for the cheapest flight option found.'),
   recommendedActivities: z.array(ActivityDetailsSchema).describe('List of recommended activities and attractions.'),
   localTransportation: z.array(TransportationDetailsSchema).describe('Details about local transportation options.'),
@@ -171,7 +170,7 @@ const prompt = ai.definePrompt({
   name: 'optimizeTravelDatesPrompt',
   input: {schema: OptimizeTravelDatesInputSchema},
   output: {schema: OptimizeTravelDatesOutputSchema},
-  prompt: `You are a local travel expert specializing in optimizing travel dates and destinations.
+  prompt: `You are a local travel expert specializing in optimizing travel dates and destinations for travel within India.
 
   Given the user's preferences, provide a comprehensive travel plan. Your response MUST be in a valid JSON format that adheres to the provided schema.
 
@@ -180,7 +179,7 @@ const prompt = ai.definePrompt({
   - Find the cheapest flight option from the source to the destination and provide its details.
   - Create a detailed day-by-day itinerary for the trip. Each day should have a title and a list of activities with times and descriptions, tailored to the traveler's preferences for trip type, activity level, cultural immersion, and nightlife.
   - Calculate an overall estimated total cost per person for the trip, staying within the provided budget range.
-  - ALL monetary values MUST be in the user's specified currency: {{{currency}}}.
+  - ALL monetary values MUST be in INR (Indian Rupees) as this service is specifically for travel within India.
 
   User Input:
   - Source: {{{source}}}
@@ -188,8 +187,7 @@ const prompt = ai.definePrompt({
   - Start Date: {{{startDate}}}
   - End Date: {{{endDate}}}
   - Trip Type: {{{tripType}}}
-  - Budget Range: {{{budgetRange}}}
-  - Preferred Currency: {{{currency}}}
+  - Budget Range (INR): {{{budgetRange}}}
   - Easy Booking Preference: {{{easyBooking}}}
   - Standard Plan Preference: {{{standardPlans}}}
   - Travel Options: {{{travelOptions}}}
@@ -267,16 +265,21 @@ const optimizeTravelDatesFlow = ai.defineFlow(
 
 
 
-      const directTrains = trainDirections.data.routes.slice(0, 4).map(route => (
-        {
-          trainName: route.legs[0].steps[0].transit_details.line.agencies[0].name || 'N/A',
-          departureStation: route.legs[0].start_address.split(',')[0],
-          arrivalStation: route.legs[0].end_address.split(',')[0],
+      const directTrains = trainDirections.data.routes.slice(0, 4).map(route => {
+        const leg = route.legs?.[0];
+        const transitStep = leg?.steps?.find(step => step.transit_details);
+        const transitDetails = transitStep?.transit_details;
+        
+        return {
+          trainName: transitDetails?.line?.agencies?.[0]?.name || 'N/A',
+          departureStation: leg?.start_address?.split(',')[0] || 'N/A',
+          arrivalStation: leg?.end_address?.split(',')[0] || 'N/A',
           price: route.fare?.currency || 'N/A',
           fareValue: route.fare?.value || 0,
-          duration: route.legs[0].duration?.text || 'N/A',
-          details: route.summary,
-      }));
+          duration: leg?.duration?.text || 'N/A',
+          details: route.summary || 'N/A',
+        };
+      });
 
       return {
           ...output!,
