@@ -82,3 +82,23 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom styles for itinerary table to ensure uniform column widths */
+@layer utilities {
+  .itinerary-table {
+    table-layout: fixed;
+    width: 100%;
+  }
+  
+  .itinerary-table thead th:first-child,
+  .itinerary-table tbody td:first-child {
+    width: 120px;
+    min-width: 120px;
+    max-width: 120px;
+  }
+  
+  .itinerary-table thead th:not(:first-child),
+  .itinerary-table tbody td:not(:first-child) {
+    width: calc((100% - 120px) / 3);
+  }
+}

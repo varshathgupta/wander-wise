@@ -1,11 +1,13 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ClipboardList, MapPin, Clock, DollarSign, Navigation, Utensils, ExternalLink, Phone, Star, Globe } from "lucide-react";
+import { ClipboardList, MapPin, Clock, DollarSign, Navigation, Utensils, ExternalLink, Phone, Star, Globe, ChevronDown, Info } from "lucide-react";
 import { useItinerary } from "@/store/travel-store";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import type { EnrichedActivity } from "@/lib/enrich-itinerary";
 
 /**
  * Example component demonstrating how to use store selectors
@@ -38,123 +40,149 @@ export function ItineraryCard() {
               </AccordionTrigger>
               <AccordionContent>
                 <div className="space-y-6 pt-2">
-                  {dayPlan.activities.map((activity, actIndex) => (
-                    <div key={actIndex} className="border-l-2 border-primary pl-4 space-y-3">
-                      {/* Time and Activity Name */}
+                  {dayPlan.activities.map((activity: EnrichedActivity, actIndex) => (
+                    <div key={actIndex} className="space-y-3">
+                      {/* Activity Title with Tags */}
                       <div>
-                        <p className="font-semibold text-sm text-primary flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {activity.time}
-                        </p>
-                        <p className="font-bold text-lg">{activity.activity}</p>
-                        <p className="text-sm text-muted-foreground">{activity.description}</p>
+                        <h4 className="font-bold text-lg mb-2">{activity.activity}</h4>
+                        {activity.tags && activity.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-2">
+                            {activity.tags.map((tag: string, tagIdx: number) => (
+                              <Badge 
+                                key={tagIdx} 
+                                variant="secondary" 
+                                className="text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20"
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Location Details */}
+                      {/* Enhanced Location Information */}
                       {activity.address && (
-                        <div className="flex items-start gap-2 text-sm">
-                          <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="font-medium">Location</p>
-                            <p className="text-muted-foreground">{activity.address}</p>
-                            {activity.mapUrl && (
+                        <div className="bg-blue-50 p-3 rounded-lg space-y-2">
+                          <div className="flex items-start gap-2">
+                            <MapPin className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                            <div className="flex-1">
+                              <p className="font-medium text-sm text-blue-900">Location</p>
+                              <p className="text-sm text-gray-700">{activity.address}</p>
+                              {activity.mapUrl && (
+                                <a 
+                                  href={activity.mapUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline inline-flex items-center gap-1 mt-1 text-xs font-medium"
+                                >
+                                  Open in Google Maps <ExternalLink className="h-3 w-3" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Description */}
+                      <p className="text-sm text-muted-foreground leading-relaxed">{activity.description}</p>
+
+                      {/* Key Details - Rating and Entry Fee */}
+                      <div className="flex flex-wrap gap-3">
+                        {activity.rating && (
+                          <div className="flex items-center gap-1.5 text-sm bg-yellow-50 px-2.5 py-1.5 rounded-md">
+                            <Star className="h-3.5 w-3.5 text-yellow-600 fill-yellow-600" />
+                            <span className="font-semibold text-yellow-900">{activity.rating.toFixed(1)}</span>
+                            <span className="text-yellow-700 text-xs">Rating</span>
+                          </div>
+                        )}
+                        {activity.entryFee && (
+                          <div className="flex items-center gap-1.5 text-sm bg-green-50 px-2.5 py-1.5 rounded-md">
+                            <DollarSign className="h-3.5 w-3.5 text-green-600" />
+                            <span className="font-medium text-green-900">{activity.entryFee}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Collapsible Timing & Additional Details */}
+                      <Collapsible>
+                        <CollapsibleTrigger className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-medium">
+                          <Info className="h-4 w-4" />
+                          <span>View timing & details</span>
+                          <ChevronDown className="h-4 w-4" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="mt-3 space-y-3 pl-6 border-l-2 border-gray-200">
+                          {/* Time */}
+                          {activity.time && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Clock className="h-3.5 w-3.5 text-gray-600" />
+                              <span className="font-medium text-gray-700">Timing:</span>
+                              <span className="text-gray-600">{activity.time}</span>
+                            </div>
+                          )}
+
+                          {/* Opening Hours */}
+                          {activity.openingHours && (
+                            <div className="text-sm">
+                              <p className="font-medium text-gray-700 mb-1">Opening Hours:</p>
+                              <p className="text-xs text-gray-600 leading-relaxed">{activity.openingHours}</p>
+                            </div>
+                          )}
+
+                          {/* Contact Information */}
+                          <div className="flex flex-wrap gap-3">
+                            {activity.websiteUrl && (
                               <a 
-                                href={activity.mapUrl} 
+                                href={activity.websiteUrl} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline inline-flex items-center gap-1 mt-1"
+                                className="text-xs text-blue-600 hover:underline inline-flex items-center gap-1"
                               >
-                                View on Google Maps <ExternalLink className="h-3 w-3" />
+                                <Globe className="h-3 w-3" />
+                                Website
+                              </a>
+                            )}
+                            {activity.phoneNumber && (
+                              <a 
+                                href={`tel:${activity.phoneNumber}`}
+                                className="text-xs text-blue-600 hover:underline inline-flex items-center gap-1"
+                              >
+                                <Phone className="h-3 w-3" />
+                                {activity.phoneNumber}
                               </a>
                             )}
                           </div>
-                        </div>
-                      )}
 
-                      {/* Rating */}
-                      {activity.rating && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                          <span className="font-medium">{activity.rating.toFixed(1)}</span>
-                          <span className="text-muted-foreground">Google Rating</span>
-                        </div>
-                      )}
-
-                      {/* Entry Fee */}
-                      {activity.entryFee && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <DollarSign className="h-4 w-4 text-green-600" />
-                          <div>
-                            <span className="font-medium">Entry Fee: </span>
-                            <Badge variant="secondary">{activity.entryFee}</Badge>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Opening Hours */}
-                      {activity.openingHours && (
-                        <div className="flex items-start gap-2 text-sm">
-                          <Clock className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="font-medium">Opening Hours</p>
-                            <p className="text-muted-foreground text-xs">{activity.openingHours}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Contact Information */}
-                      <div className="flex flex-wrap gap-3">
-                        {activity.websiteUrl && (
-                          <a 
-                            href={activity.websiteUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
-                          >
-                            <Globe className="h-3 w-3" />
-                            Website
-                          </a>
-                        )}
-                        {activity.phoneNumber && (
-                          <a 
-                            href={`tel:${activity.phoneNumber}`}
-                            className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
-                          >
-                            <Phone className="h-3 w-3" />
-                            {activity.phoneNumber}
-                          </a>
-                        )}
-                      </div>
-
-                      {/* Directions */}
-                      {activity.directions && (
-                        <div className="bg-blue-50 p-3 rounded-lg space-y-2">
-                          <div className="flex items-center gap-2 text-sm font-semibold text-blue-900">
-                            <Navigation className="h-4 w-4" />
-                            How to Reach
-                          </div>
-                          <div className="text-sm space-y-1">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                {activity.directions.travelMode}
-                              </Badge>
-                              <span className="text-muted-foreground">
-                                {activity.directions.duration} • {activity.directions.distance}
-                              </span>
+                          {/* Directions */}
+                          {activity.directions && (
+                            <div className="bg-gray-50 p-2.5 rounded text-xs space-y-1">
+                              <div className="flex items-center gap-1 font-semibold text-gray-900">
+                                <Navigation className="h-3 w-3" />
+                                How to Reach
+                              </div>
+                              <div className="text-sm space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-xs">
+                                    {activity.directions.travelMode}
+                                  </Badge>
+                                  <span className="text-muted-foreground">
+                                    {activity.directions.duration} • {activity.directions.distance}
+                                  </span>
+                                </div>
+                                {activity.directions.steps && activity.directions.steps.length > 0 && (
+                                  <details className="text-xs text-muted-foreground mt-2">
+                                    <summary className="cursor-pointer hover:text-foreground">View directions</summary>
+                                    <ol className="list-decimal list-inside space-y-1 mt-2 pl-2">
+                                      {activity.directions.steps.map((step, idx) => (
+                                        <li key={idx} dangerouslySetInnerHTML={{ __html: step }} />
+                                      ))}
+                                    </ol>
+                                  </details>
+                                )}
+                              </div>
                             </div>
-                            {activity.directions.steps && activity.directions.steps.length > 0 && (
-                              <details className="text-xs text-muted-foreground mt-2">
-                                <summary className="cursor-pointer hover:text-foreground">View directions</summary>
-                                <ol className="list-decimal list-inside space-y-1 mt-2 pl-2">
-                                  {activity.directions.steps.map((step, idx) => (
-                                    <li key={idx} dangerouslySetInnerHTML={{ __html: step }} />
-                                  ))}
-                                </ol>
-                              </details>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                          )}
+                        </CollapsibleContent>
+                      </Collapsible>
 
                       {/* Nearby Dining */}
                       {activity.nearbyDining && activity.nearbyDining.length > 0 && (
