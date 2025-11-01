@@ -124,7 +124,7 @@ const OptimizeTravelDatesOutputSchema = z.object({
   reasoning: z.string().describe('Reasoning for the date and/or destination changes.'),
   placesToVisit: z.array(z.string()).describe('A list of 3-5 recommended places to visit at the destination.'),
   totalEstimatedCostPerPerson: z.number().describe('The overall estimated total expense per person for the entire trip in INR (Indian Rupees).'),
-  currency: z.literal('INR').describe('The currency used for all cost estimations (always INR for India).'),
+  currency: z.string().describe('The currency used for all cost estimations (always INR for India).'),
   cheapestFlight: FlightDetailsSchema.describe('Details for the cheapest flight option found.'),
   recommendedActivities: z.array(ActivityDetailsSchema).describe('List of recommended activities and attractions.'),
   localTransportation: z.array(TransportationDetailsSchema).describe('Details about local transportation options.'),
