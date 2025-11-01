@@ -9,7 +9,7 @@ const hasRequiredEnvVars = () => {
   return !!(
     process.env.FIREBASE_PROJECT_ID &&
     process.env.FIREBASE_CLIENT_EMAIL &&
-    process.env.FIREBASE_PRIVATE_KEY
+    (process.env.ADMIN_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY)
   );
 };
 
@@ -27,10 +27,8 @@ const initializeFirebaseAdmin = () => {
 
   try {
     // Handle private key - it might have literal \n or actual newlines
-    let privateKey = process.env.FIREBASE_PRIVATE_KEY!;
-    
-    // First, trim any surrounding whitespace
-    privateKey = privateKey.trim();
+    // Support both ADMIN_PRIVATE_KEY (for Firebase secrets) and FIREBASE_PRIVATE_KEY (for local .env)
+    let privateKey = process.env.ADMIN_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY!;
     
     // Remove surrounding quotes if present (common mistake when setting secrets)
     privateKey = privateKey.replace(/^["']|["']$/g, '');
@@ -39,12 +37,21 @@ const initializeFirebaseAdmin = () => {
     // This handles both \\n (double escaped) and \n (single escaped)
     privateKey = privateKey.replace(/\\n/g, '\n');
     
+    // Trim any surrounding whitespace AFTER processing newlines
+    privateKey = privateKey.trim();
+    
+    // Debug logging (will be visible in production logs)
+    console.log('Private key length:', privateKey.length);
+    console.log('Starts with header:', privateKey.startsWith('-----BEGIN PRIVATE KEY-----'));
+    console.log('First 50 chars:', privateKey.substring(0, 50));
+    console.log('Last 50 chars:', privateKey.substring(privateKey.length - 50));
+    
     // Ensure the key starts and ends properly
     if (!privateKey.startsWith('-----BEGIN PRIVATE KEY-----')) {
       throw new Error('Private key does not start with correct header');
     }
     if (!privateKey.endsWith('-----END PRIVATE KEY-----')) {
-      throw new Error('Private key does not end with correct footer');
+      throw new Error(`Private key does not end with correct footer. Last 30 chars: "${privateKey.substring(privateKey.length - 30)}"`);
     }
     
     const serviceAccount = {
