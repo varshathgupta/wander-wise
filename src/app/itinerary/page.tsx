@@ -41,10 +41,33 @@ import {
   Sunrise,
   Sun,
   Moon,
+  Download,
 } from "lucide-react";
 import type { EnrichedActivity } from "@/lib/enrich-itinerary";
 import { Header } from "@/components/header";
 import Link from "next/link";
+import jsPDF from "jspdf";
+
+// Helper function to format price level
+function formatPriceLevel(entryFee: string | undefined): string | undefined {
+  if (!entryFee) return undefined;
+  
+  // If it's already a formatted string, return it
+  if (['Free', 'Affordable', 'Moderate', 'Expensive', 'Very Expensive', 'As per booking'].includes(entryFee)) {
+    return entryFee;
+  }
+  
+  // Handle numeric values (0-4) that might be stored as strings
+  const numericPriceMap: Record<string, string> = {
+    '0': 'Free',
+    '1': 'Affordable',
+    '2': 'Moderate',
+    '3': 'Expensive',
+    '4': 'Very Expensive',
+  };
+  
+  return numericPriceMap[entryFee] || entryFee;
+}
 
 // Helper function to categorize activities by time of day
 function categorizeActivitiesByTime(activities: EnrichedActivity[]) {
@@ -159,10 +182,10 @@ function ActivityCell({ activities }: { activities: EnrichedActivity[] }) {
                   <span className="text-yellow-700 text-xs">Rating</span>
                 </div>
               )}
-              {activity.entryFee && (
+              {formatPriceLevel(activity.entryFee) && (
                 <div className="flex items-center gap-1.5 text-sm bg-green-50 px-2.5 py-1.5 rounded-md">
                   <DollarSign className="h-3.5 w-3.5 text-green-600" />
-                  <span className="font-medium text-green-900">{activity.entryFee}</span>
+                  <span className="font-medium text-green-900">{formatPriceLevel(activity.entryFee)}</span>
                 </div>
               )}
             </div>
@@ -369,10 +392,10 @@ function ActivityCard({ activity }: { activity: EnrichedActivity }) {
             <span className="text-yellow-700 text-xs">Rating</span>
           </div>
         )}
-        {activity.entryFee && (
+        {formatPriceLevel(activity.entryFee) && (
           <div className="flex items-center gap-1.5 text-sm bg-green-50 px-2.5 py-1.5 rounded-md">
             <DollarSign className="h-3.5 w-3.5 text-green-600" />
-            <span className="font-medium text-green-900">{activity.entryFee}</span>
+            <span className="font-medium text-green-900">{formatPriceLevel(activity.entryFee)}</span>
           </div>
         )}
       </div>
@@ -447,6 +470,193 @@ function ActivityCard({ activity }: { activity: EnrichedActivity }) {
       </Collapsible>
     </div>
   );
+}
+
+// Function to draw the Plane icon in the PDF
+function drawPlaneIcon(doc: jsPDF, x: number, y: number, size: number) {
+  // Simple plane icon representation using lines
+  doc.setDrawColor(59, 130, 246); // Primary blue color
+  doc.setLineWidth(0.5);
+  
+  // Draw plane body
+  doc.line(x, y, x + size, y);
+  doc.line(x + size * 0.3, y - size * 0.3, x + size * 0.7, y - size * 0.3);
+  doc.line(x + size * 0.3, y - size * 0.3, x + size * 0.3, y);
+  doc.line(x + size * 0.7, y - size * 0.3, x + size * 0.7, y);
+  
+  // Draw wings
+  doc.line(x + size * 0.5, y, x + size * 0.5, y + size * 0.4);
+  doc.line(x + size * 0.3, y + size * 0.2, x + size * 0.7, y + size * 0.2);
+  
+  // Draw tail
+  doc.line(x, y, x + size * 0.2, y - size * 0.2);
+}
+
+// Function to generate and download PDF
+function generatePDF(
+  itinerary: Array<{ day: number; title: string; activities: EnrichedActivity[] }>,
+  source: string,
+  destination: string
+) {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 20;
+  let yPosition = margin;
+
+  // Helper function to check if we need a new page
+  const checkPageBreak = (requiredSpace: number) => {
+    if (yPosition + requiredSpace > pageHeight - margin) {
+      doc.addPage();
+      yPosition = margin;
+      return true;
+    }
+    return false;
+  };
+
+  // Add brand logo and title
+  drawPlaneIcon(doc, margin, yPosition, 8);
+  doc.setFontSize(20);
+  doc.setTextColor(59, 130, 246); // Primary blue
+  doc.setFont("helvetica", "bold");
+  doc.text("WanderWise", margin + 12, yPosition + 5);
+  
+  yPosition += 20;
+
+  // Add itinerary title
+  doc.setFontSize(24);
+  doc.setTextColor(31, 41, 55); // Gray-800
+  doc.text("Your Travel Itinerary", margin, yPosition);
+  yPosition += 10;
+
+  // Add trip details
+  doc.setFontSize(12);
+  doc.setTextColor(107, 114, 128); // Gray-500
+  doc.setFont("helvetica", "normal");
+  doc.text(`${source} to ${destination}`, margin, yPosition);
+  yPosition += 15;
+
+  // Add separator line
+  doc.setDrawColor(229, 231, 235); // Gray-200
+  doc.line(margin, yPosition, pageWidth - margin, yPosition);
+  yPosition += 15;
+
+  // Iterate through each day
+  itinerary.forEach((dayPlan) => {
+    const { morning, afternoon, evening } = categorizeActivitiesByTime(dayPlan.activities);
+    
+    checkPageBreak(30);
+    
+    // Day header
+    doc.setFillColor(239, 246, 255); // Blue-50
+    doc.rect(margin, yPosition - 7, pageWidth - 2 * margin, 12, "F");
+    doc.setFontSize(16);
+    doc.setTextColor(31, 41, 55);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Day ${dayPlan.day}: ${dayPlan.title}`, margin + 5, yPosition);
+    yPosition += 15;
+
+    // Helper function to add activities section
+    const addActivitiesSection = (title: string, activities: EnrichedActivity[]) => {
+      if (activities.length === 0) return;
+      
+      checkPageBreak(20);
+      
+      // Section header with background
+      doc.setFillColor(219, 234, 254); // Blue-100
+      doc.rect(margin + 3, yPosition - 6, pageWidth - 2 * margin - 6, 10, "F");
+      doc.setFontSize(11);
+      doc.setTextColor(30, 64, 175); // Blue-800
+      doc.setFont("helvetica", "bold");
+      doc.text(title, margin + 5, yPosition);
+      yPosition += 10;
+
+      activities.forEach((activity) => {
+        const estimatedHeight = 35 + (activity.tags?.length || 0) * 3;
+        checkPageBreak(estimatedHeight);
+        
+        // Activity name with bullet point
+        doc.setFontSize(11);
+        doc.setTextColor(31, 41, 55);
+        doc.setFont("helvetica", "bold");
+        doc.circle(margin + 8, yPosition - 1, 1, "F"); // Bullet point
+        const activityLines = doc.splitTextToSize(activity.activity, pageWidth - 2 * margin - 15);
+        doc.text(activityLines, margin + 12, yPosition);
+        yPosition += activityLines.length * 5;
+
+        // Tags
+        if (activity.tags && activity.tags.length > 0) {
+          doc.setFontSize(8);
+          doc.setTextColor(107, 114, 128);
+          doc.setFont("helvetica", "italic");
+          doc.text(`Tags: ${activity.tags.join(", ")}`, margin + 12, yPosition);
+          yPosition += 5;
+        }
+
+        // Description
+        doc.setFontSize(9);
+        doc.setTextColor(75, 85, 99);
+        doc.setFont("helvetica", "normal");
+        const descLines = doc.splitTextToSize(activity.description, pageWidth - 2 * margin - 15);
+        doc.text(descLines, margin + 12, yPosition);
+        yPosition += descLines.length * 4;
+
+        // Details
+        if (activity.address) {
+          doc.setFontSize(8);
+          doc.setTextColor(107, 114, 128);
+          const addressLines = doc.splitTextToSize(`Location: ${activity.address}`, pageWidth - 2 * margin - 15);
+          doc.text(addressLines, margin + 12, yPosition);
+          yPosition += addressLines.length * 4;
+        }
+
+        // Rating and Entry Fee
+        let detailsText = "";
+        if (activity.rating) {
+          detailsText += `Rating: ${activity.rating.toFixed(1)}`;
+        }
+        const formattedPrice = formatPriceLevel(activity.entryFee);
+        if (formattedPrice) {
+          detailsText += detailsText ? ` | Price: ${formattedPrice}` : `Price: ${formattedPrice}`;
+        }
+        if (activity.time) {
+          detailsText += detailsText ? ` | Time: ${activity.time}` : `Time: ${activity.time}`;
+        }
+        
+        if (detailsText) {
+          doc.setFontSize(8);
+          doc.text(detailsText, margin + 12, yPosition);
+          yPosition += 5;
+        }
+
+        yPosition += 5; // Space between activities
+      });
+
+      yPosition += 5;
+    };
+
+    // Add activities by time of day
+    addActivitiesSection("MORNING (5 AM - 12 PM)", morning);
+    addActivitiesSection("AFTERNOON (12 PM - 5 PM)", afternoon);
+    addActivitiesSection("EVENING/NIGHT (5 PM onwards)", evening);
+
+    yPosition += 10; // Space between days
+  });
+
+  // Add footer on last page
+  doc.setFontSize(8);
+  doc.setTextColor(156, 163, 175);
+  doc.setFont("helvetica", "italic");
+  doc.text(
+    "Generated by WanderWise - Your AI Travel Companion",
+    pageWidth / 2,
+    pageHeight - 10,
+    { align: "center" }
+  );
+
+  // Save the PDF
+  const fileName = `WanderWise_Itinerary_${source}_to_${destination}.pdf`.replace(/\s+/g, "_");
+  doc.save(fileName);
 }
 
 export default function ItineraryPage() {
@@ -556,14 +766,25 @@ export default function ItineraryPage() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Suggestions
           </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => router.push("/")}
-            className="w-full sm:w-auto"
-          >
-            Start New Trip
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+            <Button
+              variant="default"
+              size="lg"
+              onClick={() => generatePDF(itinerary, source, destination)}
+              className="w-full sm:w-auto"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download PDF
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => router.push("/")}
+              className="w-full sm:w-auto"
+            >
+              Start New Trip
+            </Button>
+          </div>
         </div>
       </main>
     </div>

@@ -285,16 +285,48 @@ export async function enrichActivity(
       enriched.phoneNumber = placeDetails.phoneNumber;
       enriched.openingHours = placeDetails.openingHours;
 
-      // Try to determine entry fee from price level
-      if (placeDetails.priceLevel) {
-        const priceMap: Record<string, string> = {
+      // Map price level from Google Places API
+      // API can return either string enum or number (0-4)
+      if (placeDetails.priceLevel !== undefined && 
+          placeDetails.priceLevel !== null && 
+          placeDetails.priceLevel !== 'PRICE_LEVEL_UNSPECIFIED') {
+        const stringPriceMap: Record<string, string> = {
           'PRICE_LEVEL_FREE': 'Free',
-          'PRICE_LEVEL_INEXPENSIVE': '₹0-500',
-          'PRICE_LEVEL_MODERATE': '₹500-1500',
-          'PRICE_LEVEL_EXPENSIVE': '₹1500-3000',
-          'PRICE_LEVEL_VERY_EXPENSIVE': '₹3000+',
+          'PRICE_LEVEL_INEXPENSIVE': 'Affordable',
+          'PRICE_LEVEL_MODERATE': 'Moderate',
+          'PRICE_LEVEL_EXPENSIVE': 'Expensive',
+          'PRICE_LEVEL_VERY_EXPENSIVE': 'Very Expensive',
         };
-        enriched.entryFee = priceMap[placeDetails.priceLevel] || 'Contact venue for pricing';
+        
+        const numericPriceMap: Record<number, string> = {
+          0: 'Free',
+          1: 'Affordable',
+          2: 'Moderate',
+          3: 'Expensive',
+          4: 'Very Expensive',
+        };
+        
+        // Handle both string and numeric price levels
+        if (typeof placeDetails.priceLevel === 'string') {
+          const mappedPrice = stringPriceMap[placeDetails.priceLevel];
+          if (mappedPrice) {
+            enriched.entryFee = mappedPrice;
+            console.log(`Price level for ${activity.activity}: ${placeDetails.priceLevel} -> ${enriched.entryFee}`);
+          } else {
+            console.log(`Unknown price level string for ${activity.activity}: ${placeDetails.priceLevel}`);
+          }
+        } else if (typeof placeDetails.priceLevel === 'number') {
+          const mappedPrice = numericPriceMap[placeDetails.priceLevel];
+          if (mappedPrice) {
+            enriched.entryFee = mappedPrice;
+            console.log(`Price level for ${activity.activity}: ${placeDetails.priceLevel} -> ${enriched.entryFee}`);
+          } else {
+            console.log(`Unknown price level number for ${activity.activity}: ${placeDetails.priceLevel}`);
+          }
+        }
+      } else {
+        // No price level data available or unspecified, don't show any price
+        console.log(`No price level data for ${activity.activity}${placeDetails.priceLevel === 'PRICE_LEVEL_UNSPECIFIED' ? ' (UNSPECIFIED)' : ''}`);
       }
 
       // Get directions from previous location if available

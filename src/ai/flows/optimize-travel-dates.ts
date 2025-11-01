@@ -267,16 +267,21 @@ const optimizeTravelDatesFlow = ai.defineFlow(
 
 
 
-      const directTrains = trainDirections.data.routes.slice(0, 4).map(route => (
-        {
-          trainName: route.legs[0].steps[0].transit_details.line.agencies[0].name || 'N/A',
-          departureStation: route.legs[0].start_address.split(',')[0],
-          arrivalStation: route.legs[0].end_address.split(',')[0],
+      const directTrains = trainDirections.data.routes.slice(0, 4).map(route => {
+        const leg = route.legs?.[0];
+        const transitStep = leg?.steps?.find(step => step.transit_details);
+        const transitDetails = transitStep?.transit_details;
+        
+        return {
+          trainName: transitDetails?.line?.agencies?.[0]?.name || 'N/A',
+          departureStation: leg?.start_address?.split(',')[0] || 'N/A',
+          arrivalStation: leg?.end_address?.split(',')[0] || 'N/A',
           price: route.fare?.currency || 'N/A',
           fareValue: route.fare?.value || 0,
-          duration: route.legs[0].duration?.text || 'N/A',
-          details: route.summary,
-      }));
+          duration: leg?.duration?.text || 'N/A',
+          details: route.summary || 'N/A',
+        };
+      });
 
       return {
           ...output!,
