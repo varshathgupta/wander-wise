@@ -29,16 +29,23 @@ const initializeFirebaseAdmin = () => {
     // Handle private key - it might have literal \n or actual newlines
     let privateKey = process.env.FIREBASE_PRIVATE_KEY!;
     
+    // First, trim any surrounding whitespace
+    privateKey = privateKey.trim();
+    
     // Remove surrounding quotes if present (common mistake when setting secrets)
     privateKey = privateKey.replace(/^["']|["']$/g, '');
     
-    // If the key contains literal \n strings, replace them with actual newlines
-    if (privateKey.includes('\\n')) {
-      privateKey = privateKey.replace(/\\n/g, '\n');
-    }
+    // Handle escaped newlines - replace literal \n with actual newlines
+    // This handles both \\n (double escaped) and \n (single escaped)
+    privateKey = privateKey.replace(/\\n/g, '\n');
     
-    // Trim any extra whitespace that might cause parsing issues
-    privateKey = privateKey.trim();
+    // Ensure the key starts and ends properly
+    if (!privateKey.startsWith('-----BEGIN PRIVATE KEY-----')) {
+      throw new Error('Private key does not start with correct header');
+    }
+    if (!privateKey.endsWith('-----END PRIVATE KEY-----')) {
+      throw new Error('Private key does not end with correct footer');
+    }
     
     const serviceAccount = {
       projectId: process.env.FIREBASE_PROJECT_ID!,
